@@ -1,0 +1,28 @@
+{
+  "name": "@cwhy/jade-testkit",
+  "version": "0.1.0-alpha.1",
+  "private": true,
+  "type": "module",
+  "license": "MPL-2.0",
+  "files": [
+    "src",
+    "LICENSE"
+  ],
+  "exports": {
+    "./list-fixture": "./src/list-fixture.js",
+    "./browser-fixture": "./src/browser-fixture.js",
+    "./peers": "./src/peers.js",
+    "./list-probe": "./src/list-probe.js",
+    "./table-fixture": "./src/table-fixture.js"
+  },
+  "dependencies": {
+    "@cwhy/jade-core": "0.1.0-alpha.1",
+    "@cwhy/jade-collaboration": "0.1.0-alpha.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cwhy/jade.git",
+    "directory": "packages/testkit"
+  },
+  "homepage": "https://github.com/cwhy/jade"
+}

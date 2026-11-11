@@ -1,0 +1,222 @@
+[
+  {
+    "trial": 42,
+    "ranges": {
+      "A": [8, 10],
+      "B": [8, 10],
+      "C": [6, 8],
+      "D": [2, 6],
+      "E": [4, 6]
+    },
+    "schedule": [
+      {
+        "actor": "C",
+        "kind": "delete"
+      },
+      {
+        "actor": "B",
+        "kind": "delete"
+      },
+      {
+        "actor": "D",
+        "kind": "delete"
+      },
+      {
+        "actor": "C",
+        "kind": "undo"
+      },
+      {
+        "actor": "B",
+        "kind": "undo"
+      },
+      {
+        "actor": "C",
+        "kind": "undo"
+      },
+      {
+        "actor": "B",
+        "kind": "undo"
+      },
+      {
+        "actor": "C",
+        "kind": "undo"
+      },
+      {
+        "actor": "B",
+        "kind": "undo"
+      },
+      {
+        "actor": "D",
+        "kind": "undo"
+      }
+    ]
+  },
+  {
+    "trial": 66,
+    "ranges": {
+      "A": [8, 10],
+      "B": [0, 4],
+      "C": [4, 8],
+      "D": [4, 6],
+      "E": [6, 8]
+    },
+    "schedule": [
+      {
+        "actor": "C",
+        "kind": "delete"
+      },
+      {
+        "actor": "B",
+        "kind": "delete"
+      },
+      {
+        "actor": "A",
+        "kind": "delete"
+      },
+      {
+        "actor": "C",
+        "kind": "undo"
+      },
+      {
+        "actor": "C",
+        "kind": "undo"
+      },
+      {
+        "actor": "C",
+        "kind": "undo"
+      },
+      {
+        "actor": "C",
+        "kind": "undo"
+      },
+      {
+        "actor": "C",
+        "kind": "undo"
+      },
+      {
+        "actor": "A",
+        "kind": "undo"
+      },
+      {
+        "actor": "B",
+        "kind": "undo"
+      }
+    ]
+  },
+  {
+    "trial": 99,
+    "ranges": {
+      "A": [3, 7],
+      "B": [3, 5],
+      "C": [5, 8],
+      "D": [1, 3],
+      "E": [7, 9]
+    },
+    "schedule": [
+      {
+        "actor": "D",
+        "kind": "delete"
+      },
+      {
+        "actor": "E",
+        "kind": "delete"
+      },
+      {
+        "actor": "A",
+        "kind": "delete"
+      },
+      {
+        "actor": "D",
+        "kind": "undo"
+      },
+      {
+        "actor": "D",
+        "kind": "undo"
+      },
+      {
+        "actor": "D",
+        "kind": "undo"
+      },
+      {
+        "actor": "E",
+        "kind": "undo"
+      },
+      {
+        "actor": "E",
+        "kind": "undo"
+      },
+      {
+        "actor": "A",
+        "kind": "undo"
+      },
+      {
+        "actor": "A",
+        "kind": "undo"
+      },
+      {
+        "actor": "D",
+        "kind": "undo"
+      },
+      {
+        "actor": "E",
+        "kind": "undo"
+      },
+      {
+        "actor": "E",
+        "kind": "undo"
+      },
+      {
+        "actor": "A",
+        "kind": "undo"
+      },
+      {
+        "actor": "E",
+        "kind": "undo"
+      },
+      {
+        "actor": "D",
+        "kind": "undo"
+      }
+    ]
+  },
+  {
+    "trial": 163,
+    "ranges": {
+      "A": [3, 4],
+      "B": [7, 8],
+      "C": [7, 9],
+      "D": [1, 7],
+      "E": [9, 10]
+    },
+    "schedule": [
+      {
+        "actor": "E",
+        "kind": "delete"
+      },
+      {
+        "actor": "D",
+        "kind": "delete"
+      },
+      {
+        "actor": "C",
+        "kind": "delete"
+      },
+      {
+        "actor": "A",
+        "kind": "delete"
+      },
+      {
+        "actor": "C",
+        "kind": "undo"
+      },
+      {
+        "actor": "A",
+        "kind": "undo"
+      },
+      {
+        "actor": "E",
+        "kind": "undo"
+      }
+    ]
+  }
+]

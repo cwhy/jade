@@ -1,0 +1,348 @@
+{
+  "included_test_roots": [
+    "attached-source-peer-gate.test.mjs",
+    "boundary-paragraph.test.mjs",
+    "cell-clear.test.mjs",
+    "cell-paste.test.mjs",
+    "cell-style-paste.test.mjs",
+    "cell-text-format.test.mjs",
+    "clipboard-cell-lifecycle.test.mjs",
+    "clipboard-cell-prose.test.mjs",
+    "clipboard-placement.test.mjs",
+    "clipboard-prose-placement.test.mjs",
+    "code-item-placement-gate.test.mjs",
+    "column-resize.test.mjs",
+    "creation-backspace-client.test.mjs",
+    "creation-backspace-conflict.test.mjs",
+    "creation-extent-guards.test.mjs",
+    "creation-extent.test.mjs",
+    "creation-ownership-extra.test.mjs",
+    "creation-projection-cost.test.mjs",
+    "cut.test.mjs",
+    "expanding-paste.test.mjs",
+    "flow-placement.test.mjs",
+    "image-item-placement-gate.test.mjs",
+    "links.test.mjs",
+    "list-admission.test.mjs",
+    "list-boundary-lifecycle.test.mjs",
+    "list-boundary-persistence.test.mjs",
+    "list-child-paste.test.mjs",
+    "list-concurrent-enter-gate.mjs",
+    "list-delete-gate.test.mjs",
+    "list-item-paste.test.mjs",
+    "list-ledger-lifecycle.test.mjs",
+    "list-ledger-persistence.test.mjs",
+    "list-literal-paste.test.mjs",
+    "list-materialization-invariants.test.mjs",
+    "list-range-enter.test.mjs",
+    "list-structure.test.mjs",
+    "list-tail-paste.test.mjs",
+    "mixed-flat-paste.test.mjs",
+    "mixed-list-marker.test.mjs",
+    "mixed-paste.test.mjs",
+    "network-shaper.test.mjs",
+    "ordered-network-shaper.test.mjs",
+    "overlapping-erasure.test.mjs",
+    "placement-chain.test.mjs",
+    "placement-composition.test.mjs",
+    "placement-prose-gate.test.mjs",
+    "prose-boundary.test.mjs",
+    "prose-history.test.mjs",
+    "prose-interleaving.test.mjs",
+    "prose-replace.test.mjs",
+    "retained-order.test.mjs",
+    "reverse-multi-numbering.test.mjs",
+    "reverse-multi-peer.test.mjs",
+    "reverse-numbered-paste.test.mjs",
+    "rich-copy.test.mjs",
+    "rich-grid-preview.test.mjs",
+    "rich-insert.test.mjs",
+    "row-resize.test.mjs",
+    "session-durability-status.test.mjs",
+    "session-ports.test.mjs",
+    "table-column-insertion.test.mjs",
+    "table-deletion.test.mjs",
+    "table-navigation.test.mjs",
+    "table-presentation.test.mjs",
+    "table-reorder.test.mjs",
+    "table-row-insertion.test.mjs",
+    "table-selection.test.mjs",
+    "text-claims-five.test.mjs",
+    "text-claims-guards.test.mjs",
+    "text-claims-matrix.test.mjs",
+    "text-range-format.test.mjs",
+    "whole-block-copy.test.mjs",
+    "whole-item-composition.test.mjs",
+    "whole-item-release.test.mjs",
+    "whole-item-retention.test.mjs",
+    "whole-text-replace.test.mjs"
+  ],
+  "included_files": [
+    "attached-source-peer-gate.test.mjs",
+    "boundary-paragraph.test.mjs",
+    "cell-clear.test.mjs",
+    "cell-paste.test.mjs",
+    "cell-style-paste.test.mjs",
+    "cell-text-format.test.mjs",
+    "clipboard-cell-fixture.mjs",
+    "clipboard-cell-lifecycle.test.mjs",
+    "clipboard-cell-prose.test.mjs",
+    "clipboard-placement.test.mjs",
+    "clipboard-prose-placement.test.mjs",
+    "code-item-placement-gate.test.mjs",
+    "column-resize.test.mjs",
+    "creation-backspace-client.test.mjs",
+    "creation-backspace-conflict.test.mjs",
+    "creation-extent-guards.test.mjs",
+    "creation-extent.test.mjs",
+    "creation-ownership-extra.test.mjs",
+    "creation-projection-cost.test.mjs",
+    "cut.test.mjs",
+    "expanding-paste.test.mjs",
+    "flow-placement.test.mjs",
+    "image-item-placement-gate.test.mjs",
+    "links.test.mjs",
+    "list-admission.test.mjs",
+    "list-boundary-lifecycle.test.mjs",
+    "list-boundary-persistence.test.mjs",
+    "list-boundary-worker.mjs",
+    "list-child-paste.test.mjs",
+    "list-concurrent-enter-gate.mjs",
+    "list-delete-gate.test.mjs",
+    "list-item-paste.test.mjs",
+    "list-ledger-lifecycle.test.mjs",
+    "list-ledger-persistence.test.mjs",
+    "list-literal-paste.test.mjs",
+    "list-materialization-invariants.test.mjs",
+    "list-range-enter.test.mjs",
+    "list-structure.test.mjs",
+    "list-tail-paste.test.mjs",
+    "mixed-flat-paste.test.mjs",
+    "mixed-list-marker.test.mjs",
+    "mixed-paste.test.mjs",
+    "network-shaper.mjs",
+    "network-shaper.test.mjs",
+    "ordered-network-shaper.mjs",
+    "ordered-network-shaper.test.mjs",
+    "overlapping-erasure.test.mjs",
+    "placement-chain-fixture.mjs",
+    "placement-chain.test.mjs",
+    "placement-composition.test.mjs",
+    "placement-prose-gate.test.mjs",
+    "prose-boundary.test.mjs",
+    "prose-history.test.mjs",
+    "prose-interleaving.test.mjs",
+    "prose-replace.test.mjs",
+    "retained-order-fixtures.json",
+    "retained-order.test.mjs",
+    "reverse-multi-numbering.test.mjs",
+    "reverse-multi-peer.test.mjs",
+    "reverse-numbered-paste.test.mjs",
+    "rich-copy.test.mjs",
+    "rich-grid-preview-fixture.mjs",
+    "rich-grid-preview.test.mjs",
+    "rich-insert.test.mjs",
+    "row-resize.test.mjs",
+    "session-durability-status.test.mjs",
+    "session-ports.test.mjs",
+    "table-column-insertion.test.mjs",
+    "table-deletion.test.mjs",
+    "table-navigation.test.mjs",
+    "table-presentation.test.mjs",
+    "table-reorder.test.mjs",
+    "table-row-insertion.test.mjs",
+    "table-selection.test.mjs",
+    "text-claims-five.test.mjs",
+    "text-claims-guards.test.mjs",
+    "text-claims-matrix.test.mjs",
+    "text-range-format.test.mjs",
+    "whole-block-copy.test.mjs",
+    "whole-item-composition.test.mjs",
+    "whole-item-release.test.mjs",
+    "whole-item-retention.test.mjs",
+    "whole-text-replace.test.mjs"
+  ],
+  "external_test_roots": [
+    {
+      "file": "attached-source-durable-gate.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "attachment-empty-outdent-gate.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "attachment-flat-paste.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "boundary-paragraph-store.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "cell-clear-store.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "cell-paste-store.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "cell-style-paste-store.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "cell-text-format-store.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "cell-witness-compaction.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "clipboard-cell-store.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "column-resize-store.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "creation-backspace-store.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "creation-extent-store.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "creation-format-fence.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "creation-ownership-store.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "expanding-paste-store.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "journal-commit.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "list-attachment-enter.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "list-child-store.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "list-item-store.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "list-network-adapter.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "list-tail-store.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "message-queue.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "mixed-flat-paste-store.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "mixed-list-marker-store.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "mixed-paste-store.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "overlapping-erasure-store.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "package-boundary.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "placement-chain-store.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "placement-composition-store.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "prose-store.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "retained-order-store.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "reverse-multi-store.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "reverse-numbered-store.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "rich-grid-preview-store.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "rich-insert-store.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "row-resize-store.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "table-column-store.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "table-controls.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "table-deletion-store.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "table-presentation-store.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "table-reorder-store.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "table-row-store.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "table-viewport.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    },
+    {
+      "file": "whole-item-store.test.mjs",
+      "reason": "Application adapter dependency (including runtime worker dependencies)"
+    }
+  ],
+  "note": "Included standalone contracts run from this repository. The external root inventory records application-dependent tests from development; those require application adapters not shipped here and are not claimed by the standalone test count."
+}

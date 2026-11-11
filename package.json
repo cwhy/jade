@@ -1,0 +1,27 @@
+{
+  "name": "jade",
+  "version": "0.1.0-alpha.1",
+  "private": true,
+  "type": "module",
+  "license": "MPL-2.0",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "test": "node tools/verify.mjs",
+    "verify": "node tools/verify.mjs",
+    "pack:local": "node tools/pack.mjs"
+  },
+  "description": "jade (just-a-doc-engine): an experimental rich-document editing engine",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cwhy/jade.git"
+  },
+  "homepage": "https://github.com/cwhy/jade",
+  "bugs": {
+    "url": "https://github.com/cwhy/jade/issues"
+  }
+}

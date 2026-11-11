@@ -1,0 +1,38 @@
+{
+  "name": "@cwhy/jade-core",
+  "version": "0.1.0-alpha.1",
+  "private": true,
+  "type": "module",
+  "license": "MPL-2.0",
+  "files": [
+    "src",
+    "LICENSE"
+  ],
+  "exports": {
+    "./model": "./src/model/engine.js",
+    "./admission": "./src/model/join-admission.js",
+    "./base-admission": "./src/model/admission.js",
+    "./immutability": "./src/model/immutable.js",
+    "./selection": "./src/selection/range.js",
+    "./selection-structure": "./src/selection/structure.js",
+    "./fragment": "./src/fragment.js",
+    "./prose-commands": "./src/commands/prose.js",
+    "./list-commands": "./src/model/commands.js",
+    "./join-commands": "./src/model/join-commands.js",
+    "./replace": "./src/commands/replace.js",
+    "./list-routing": "./src/commands/list-routing.js",
+    "./commands": "./src/commands/editor.js",
+    "./table-selection": "./src/selection/table.js",
+    "./grid-fragment": "./src/grid-fragment.js",
+    "./rich-slice": "./src/rich-slice.js",
+    "./list-marker": "./src/model/list-marker.js",
+    "./block-selection": "./src/selection/blocks.js"
+  },
+  "dependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cwhy/jade.git",
+    "directory": "packages/document-core"
+  },
+  "homepage": "https://github.com/cwhy/jade"
+}

@@ -1,0 +1,21 @@
+{
+  "name": "@cwhy/jade-protocol",
+  "version": "0.1.0-alpha.1",
+  "private": true,
+  "type": "module",
+  "license": "MPL-2.0",
+  "files": [
+    "src",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "dependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cwhy/jade.git",
+    "directory": "packages/protocol"
+  },
+  "homepage": "https://github.com/cwhy/jade"
+}

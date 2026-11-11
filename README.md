@@ -1,0 +1,66 @@
+# jade
+
+**just-a-doc-engine** — an experimental rich-document editing engine.
+
+jade provides document structure, editing commands, stable identities, collaborative Undo and browser input/rendering adapters. It is designed for rich cells containing paragraphs, lists, code and images. It is not a Markdown-based document model or a ready-made document application.
+
+> **Alpha software.** The API and document format may change. Do not treat the current tests as production certification. See [status and limitations](docs/STATUS.md).
+
+## What is here
+
+- Rich text and formatting, lists, code blocks, image references and rectangular tables.
+- Structural commands and stable selection/anchor identities.
+- Actor-owned Undo/Redo and deterministic collaboration decisions/replay.
+- Browser DOM, selection, composition and clipboard adapters.
+- Standalone regression tests that run against actual packaged artifacts.
+
+Authentication, permissions, hosting, databases, asset storage and application screens belong to the host application. jade does not supply a hosted collaboration service.
+
+## Try it
+
+Requirements: Node.js 22.13 or newer and npm. No registry packages are required to run the standalone suite.
+
+```sh
+git clone https://github.com/cwhy/jade.git
+cd jade
+npm test
+```
+
+The verifier checks package boundaries, runs internal tests, packs the five libraries, installs them into an independent temporary consumer and runs public-contract tests. Logs and results are written under ignored `artifacts/verify-*` directories.
+
+To run the [basic editing example](examples/basic-editing.mjs) directly:
+
+```sh
+npm install --offline --ignore-scripts --no-audit --no-fund
+node examples/basic-editing.mjs
+```
+
+For local integration:
+
+```sh
+npm run pack:local
+```
+
+This creates tarballs and `package-set.json` in `artifacts/packages`. Install the coordinated package set by file path. The packages are **not published to npm**; `private: true` prevents accidental registry publication.
+
+## Packages
+
+| Package                    | Responsibility                                                                      |
+| -------------------------- | ----------------------------------------------------------------------------------- |
+| `@cwhy/jade-core`          | Document model, commands, validation, identities, selections/anchors and owned Undo |
+| `@cwhy/jade-browser`       | DOM rendering, selection, input/composition and clipboard adapters                  |
+| `@cwhy/jade-collaboration` | Client/session orchestration, authority decisions and replay through host ports     |
+| `@cwhy/jade-protocol`      | Wire version and operation-envelope validation                                      |
+| `@cwhy/jade-testkit`       | Reusable synthetic fixtures and test peers                                          |
+
+Only documented package exports are supported. Do not import source files from another package. The browser package is optional for server consumers. See [architecture](docs/ARCHITECTURE.md).
+
+## Contributing
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before changing an editing invariant or document format. Preserve failing assertions, add a focused regression for behavior changes, and run the packaged test suite.
+
+## License
+
+[Mozilla Public License 2.0](LICENSE) (SPDX: `MPL-2.0`).
+
+You may use jade in open-source or proprietary applications. When distributing covered code, follow the MPL requirements for source availability and notices. See the [Mozilla FAQ](https://www.mozilla.org/en-US/MPL/2.0/FAQ/) for guidance.
