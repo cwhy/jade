@@ -7,7 +7,7 @@ import { gapAt } from "@cwhy/jade-core/model";
 import { fixture } from "@cwhy/jade-testkit/browser-fixture";
 import { WIRE_VERSION } from "@cwhy/jade-protocol";
 
-async function harness() {
+async function harness(replication) {
   const room = new Room(fixture()),
     trace = [],
     timers = new Map();
@@ -50,6 +50,7 @@ async function harness() {
     },
     cancel: (id) => timers.delete(id),
     checkpointEvery: 100,
+    ...(replication ? {replication} : {}),
   });
   async function drain() {
     for (let n = 0; n < 10; n++) {
@@ -141,4 +142,20 @@ test("host journal failure pauses the session without submitting an unpersisted 
   );
   assert.match(s.status(), /editing paused/);
   s.close();
+});
+
+
+test("host replication adapter owns replay and duplicate validation without bypassing durability", async()=>{
+  const {publicReplication}=await import('@cwhy/jade-collaboration/public-replication');
+  let replays=0,duplicates=0;
+  const h=await harness({replay(record,event){replays++;return publicReplication.replay(record,event);},verifyDuplicate(record,event){duplicates++;return publicReplication.verifyDuplicate(record,event);}});
+  try {
+    const paragraph=Object.values(h.session.client.state.nodes).find(n=>n.live&&n.type==='paragraph');
+    const op=h.session.client.prepare({kind:'insert',at:gapAt(h.session.client.state,paragraph.id,0),text:'adapter',marks:[]});
+    await h.session.persistAndSend();
+    const event={cursor:1,op,receipt:h.room.accept(op)};
+    h.receive({type:'event',event});await h.drain();
+    assert.equal(replays,1);assert.equal(h.session.durableCursor,1);assert.equal(h.session.client.pending.length,0);
+    h.receive({type:'event',event});await h.drain();assert.equal(duplicates,1);assert.equal(h.session.failed,undefined);
+  } finally {h.session.close();}
 });

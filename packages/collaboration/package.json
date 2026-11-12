@@ -1,6 +1,6 @@
 {
   "name": "@cwhy/jade-collaboration",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "private": true,
   "type": "module",
   "license": "MPL-2.0",
@@ -12,11 +12,12 @@
     "./client": "./src/client.js",
     "./room": "./src/room.js",
     "./replay": "./src/replay.js",
-    "./session": "./src/session.js"
+    "./session": "./src/session.js",
+    "./public-replication": "./src/public-replication.js"
   },
   "dependencies": {
-    "@cwhy/jade-core": "0.1.0-alpha.1",
-    "@cwhy/jade-protocol": "0.1.0-alpha.1"
+    "@cwhy/jade-core": "0.1.0-alpha.2",
+    "@cwhy/jade-protocol": "0.1.0-alpha.2"
   },
   "repository": {
     "type": "git",

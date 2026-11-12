@@ -64,3 +64,19 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) before changing an editing invariant or 
 [Mozilla Public License 2.0](LICENSE) (SPDX: `MPL-2.0`).
 
 You may use jade in open-source or proprietary applications. When distributing covered code, follow the MPL requirements for source availability and notices. See the [Mozilla FAQ](https://www.mozilla.org/en-US/MPL/2.0/FAQ/) for guidance.
+
+### Authorized replication (alpha.2)
+
+`@cwhy/jade-collaboration/public-replication` provides `publicRecord(record, actor)`,
+`publicEvent(event, actor)` and the `publicReplication` session adapter. Hosts must
+choose `actor` from authenticated authority, project both checkpoints and events
+on the server, and pass `replication: publicReplication` to `DocumentSession`.
+Foreign rejected drafts and rejection reasons become sequence-only markers;
+accepted operations and the recipient's own decisions retain exact replay and
+retry validation. Full authority storage is unchanged (codec43/wire43).
+
+The default session adapter remains the existing full-record replay contract.
+A host may supply `{replay, verifyDuplicate}` as `ports.replication`; both must be
+synchronous deterministic validators. Journal-before-send, catchup ordering and
+Saved-after-journal semantics remain owned by `DocumentSession`. This hook does
+not provide authentication, access revocation, encryption or a transport.

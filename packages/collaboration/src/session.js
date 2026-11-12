@@ -37,6 +37,16 @@ export class DocumentSession {
     ])
       if (typeof ports[key] !== "function")
         throw Error("Missing session port: " + key);
+    if (ports.replication && (typeof ports.replication.replay !== "function" || typeof ports.replication.verifyDuplicate !== "function"))
+      throw Error("Invalid replication adapter");
+    this.replication = ports.replication || {
+      replay,
+      verifyDuplicate(record, event) {
+        const existing = record.receipts[event.op.id];
+        if (JSON.stringify(existing) !== JSON.stringify(event.receipt) || existing?.bytes !== JSON.stringify(event.op))
+          throw Error("Duplicate event changed");
+      },
+    };
     this.ports = ports;
     Object.assign(this, {
       doc,
@@ -91,7 +101,7 @@ export class DocumentSession {
       for (const event of saved.events) {
         if (event.cursor !== this.cursor + 1)
           throw Error("Local journal cursor gap");
-        record = replay(record, event);
+        record = this.replication.replay(record, event);
         this.cursor = event.cursor;
       }
       if (this.cursor !== saved.head.cursor)
@@ -284,17 +294,12 @@ export class DocumentSession {
       if (m.type !== "event") throw Error("Unknown server message");
       const event = m.event;
       if (event.cursor <= cursor) {
-        const existing = record.receipts[event.op.id];
-        if (
-          JSON.stringify(existing) !== JSON.stringify(event.receipt) ||
-          existing?.bytes !== JSON.stringify(event.op)
-        )
-          throw Error("Duplicate event changed");
+        this.replication.verifyDuplicate(record, event);
         this.metrics.duplicates++;
         continue;
       }
       if (event.cursor !== cursor + 1) throw Error("Wire event cursor gap");
-      record = replay(record, event);
+      record = this.replication.replay(record, event);
       cursor = event.cursor;
       events.push(event);
       acknowledged.push(event.op.id);
