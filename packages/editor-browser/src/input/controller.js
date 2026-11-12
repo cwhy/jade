@@ -1109,8 +1109,8 @@ export function bindSelectionController({
   for (const [name, handler] of Object.entries(handlers))
     root.addEventListener(name, handler);
   return {
-    captureInsertion(){
-      try{const range=capture(client().state);return !composing&&!range.kind&&range.collapsed?{client:client(),range}:null;}catch{return null;}
+    captureInsertion({allowRange=false}={}){
+      try{const range=capture(client().state);return !composing&&!range.kind&&(range.collapsed||allowRange)?{client:client(),range}:null;}catch{return null;}
     },
     insertBlock(options,bookmark){
       try{if(composing||!bookmark||bookmark.client!==client()||!planners.insertBlock)throw new ReviewRequired("Place a caret in the document before inserting");

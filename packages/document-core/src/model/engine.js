@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 import {executeMedia,fenceMedia} from './media.js';
+import {executeImagePlacement} from './image-placement.js';
 import {executeTableCreate} from './table-creation.js';
 import { executeTextClaim, validateTextClaims } from "./text-claims.js";
 import {
@@ -754,6 +755,7 @@ function execute(state, intent, action, materialization = null) {
     resumeCreationPlacements(state, boundaryPath, creationHost);
     return inverse;
   }
+  if(intent.kind === 'imagePlace') return executeImagePlacement(state,intent,action,{execute:(i,id)=>execute(state,i,id,materialization),write:field=>writable(state,field),resolve:gap=>resolveGap(state,gap),gap:(id,offset)=>gapAt(state,id,offset),fail:m=>new Conflict(m)});
   if(['imageInsert','imageComplete','imageDelete','imagePresence','mediaNoop'].includes(intent.kind))return executeMedia(state,intent,action,{write:field=>writable(state,field),resolve:gap=>resolveGap(state,gap),fail:m=>new Conflict(m)});
   if (["tableCreate","tableCreationActive"].includes(intent.kind))
     return executeTableCreate(state,intent,action,{write:field=>writable(state,field),remember:(id,block,offset)=>rememberBoundary(state,id,block,offset),resolve:gap=>resolveGap(state,gap),fail:m=>new Conflict(m)});

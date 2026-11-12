@@ -1,4 +1,4 @@
-# Shared image upload lifecycle (alpha.4)
+# Shared image upload lifecycle (alpha.5)
 
 This is the engine foundation for uploads, not a file-upload service or a complete
 image UI. The host remains responsible for identity, access, file validation,
@@ -8,9 +8,11 @@ private object storage, serving assets, progress, retries and cleanup.
 
 `planInsertBlock(state, range, op, {type: "image", slot, width, height})` inserts
 one shared image placeholder at the end of a paragraph in a document, cell or
-list item. `slot` is a unique 16–80 character identifier; dimensions are integers
-from 1 through 10,000. Arbitrary range replacement and multi-image paste are not
-implemented by this command.
+list item. Alpha.5 also accepts a caret or a text selection within one body/cell
+paragraph: one atomic `imagePlace` command erases only the captured characters,
+splits the surviving paragraph, and inserts the image before its suffix. `slot` is a unique 16–80 character identifier; dimensions are integers
+from 1 through 10,000. Selections spanning paragraphs, middle-of-list-item placement and multi-image
+paste remain guarded. Existing end-of-list-paragraph insertion is unchanged.
 
 The image keeps a stable node ID (`op.id + ":image"`) and `mediaSlot`. The
 separate `state.pendingMedia[imageId] = {generation}` ledger controls whether
@@ -84,8 +86,8 @@ transferable image. Normal copy/export completion must still require all assets.
 
 ## Compatibility and evidence
 
-Alpha.4 uses wire 45. Codec 43 records without the optional `pendingMedia` map
-remain readable. Wire 43/44 journals preserve immutable pending payloads on
+Alpha.5 uses wire 46. Codec 43 records without the optional `pendingMedia` map
+remain readable. Wire 43/44/45 journals preserve immutable pending payloads on
 one-way upgrade. Hosts must fence older clients before delivering new media
 operations or checkpoints; do not downgrade a room that contains these records.
 
@@ -95,3 +97,28 @@ duplicate delivery, reload/replay, malformed descriptors/ledgers, peer text,
 structural deletion/clear and repeated restoration. These tests do not prove
 real file durability, browser rendering, access revocation or native clipboard
 upload behavior; those require host integration tests.
+
+## Atomic placement and owned restoration
+
+The public controller accepts `captureInsertion({allowRange: true})` for image
+UI; the default remains a collapsed caret for existing block tools. Preparation
+must retain that bookmark and revalidate it before insertion. A changed selection
+requires a fresh user choice; it is not silently replaced.
+
+`imagePlace` carries an existing gap, captured character IDs and the upload-slot
+descriptor. The authority composes ordinary text-erasure claims, `proseEnter`
+partitions and image presence inside one operation. Prefix/suffix characters keep
+their identities, marks and anchors. Undo removes the owned image/cut and restores
+selected text, preserving concurrent typing and independently owned Enter cuts.
+Redo restores the image immediately before its restored suffix, even after a peer
+splits the prefix. Completion remains part of the original action for Undo.
+
+Structural conflicts (for example, moving/removing the containing structure)
+may still require review; the operation must fail atomically. This command does
+not grant upload authority or introduce an alternative asset lifecycle.
+
+`contracts/image-placement.test.mjs` adds 70 schedules covering exact text/marks,
+anchors, same-gap images, both arrival orders for typing/Enter, offline erased
+text, repeated Undo/Redo, duplicate delivery, reload/replay, generation fencing,
+and guarded cross-container/multi-paragraph input. Browser/file transport must
+still be qualified by each host.

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 import {validateMedia, validateMediaState} from './media.js';
+import {validateImagePlacement} from './image-placement.js';
 import {validateTableCreate} from './table-creation.js';
 import { validateMarkerType } from "./list-marker.js";
 import { validateListNumbering } from "./list-numbering.js";
@@ -197,6 +198,10 @@ export function validatePublicIntent(
       if (inBatch) fail("Numbering must be a complete operation");
       validateListNumbering(state, intent);
       return;
+    case 'imagePlace':
+      if(inBatch)fail('Media commands must be complete operations');
+      checkGap(state,intent.at);
+      validateImagePlacement(state,intent,{resolve:at=>engine.resolveGap(state,at),gap:(id,offset)=>engine.gapAt(state,id,offset),fail:m=>new engine.Conflict('Admission: '+m)});return;
     case 'imageInsert':
     case 'imageComplete':
     case 'imageDelete':

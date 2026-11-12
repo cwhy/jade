@@ -131,3 +131,16 @@ codec43 records and wire43/44 journals remain readable on one-way upgrade.
 This is an engine lifecycle capability; a host still needs an authorized upload
 service and image UI. See [the media contract](docs/MEDIA.md) for the authority
 boundary, supported transitions and remaining scope.
+
+### Atomic image placement (alpha.5)
+
+Wire **46** adds single-image insertion inside a body/cell paragraph, including
+replacement of text selected within that paragraph. Erasure, paragraph splitting
+and shared slot creation are one owned edit; concurrent text and Enter retain
+their own identities through Undo/Redo. The controller's
+`captureInsertion({allowRange: true})` opts into range bookmarks. Multi-paragraph
+replacement and middle-of-list-item placement remain guarded.
+
+Codec **43** and wire43/44/45 offline journals remain readable on one-way upgrade.
+Hosts must advance their wire gate and close older clients before new operations
+are delivered. See [MEDIA.md](docs/MEDIA.md) for scope and lifecycle semantics.

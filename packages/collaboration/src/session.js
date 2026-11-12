@@ -94,10 +94,10 @@ export class DocumentSession {
     const saved = await this.journal.read();
     let record, stream;
     if (saved.checkpoint) {
-      // Wire45 adds media lifecycle operations and an optional pending-media ledger.
+      // Wire46 adds atomic image placement using existing codec43 text partitions.
       // Prior wire43/44 journals retain their codec43 meaning and immutable
       // operation payloads. This is a one-way reader upgrade.
-      if (saved.checkpoint.wire !== WIRE_VERSION && !(WIRE_VERSION === 45 && [43,44].includes(saved.checkpoint.wire)))
+      if (saved.checkpoint.wire !== WIRE_VERSION && !(WIRE_VERSION === 46 && [43,44,45].includes(saved.checkpoint.wire)))
         throw Error(
           "Incompatible lab journal version; original journal retained",
         );

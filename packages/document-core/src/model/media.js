@@ -159,7 +159,7 @@ export function executeMedia(state, intent, action, host) {
     throw fail("Image changed; cannot undo this action");
   if (!intent.active && treeParent(state, node.id)?.id !== parent.id)
     throw fail("Image moved; cannot undo this action");
-  if (intent.active && intent.after && !parent.children.includes(intent.after))
+  if (intent.active && (intent.before ? !parent.children.includes(intent.before) : intent.after && !parent.children.includes(intent.after)))
     throw fail("Image insertion boundary was removed");
   const n = { ...node, live: intent.active, imageOwner: action };
   if (!intent.active) n.retiredBy = action;
@@ -168,7 +168,7 @@ export function executeMedia(state, intent, action, host) {
   const children = parent.children.filter((id) => id !== n.id);
   if (intent.active)
     children.splice(
-      intent.after ? children.indexOf(intent.after) + 1 : 0,
+      intent.before ? children.indexOf(intent.before) : intent.after ? children.indexOf(intent.after) + 1 : 0,
       0,
       n.id,
     );
