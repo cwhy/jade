@@ -1,3 +1,4 @@
+import {validateTableCreate} from './table-creation.js';
 // SPDX-License-Identifier: MPL-2.0
 import { validateMarkerType } from "./list-marker.js";
 import { validateListNumbering } from "./list-numbering.js";
@@ -192,6 +193,11 @@ export function validatePublicIntent(
     case "listNumbering":
       if (inBatch) fail("Numbering must be a complete operation");
       validateListNumbering(state, intent);
+      return;
+    case "tableCreate":
+      if(inBatch)fail("Table creation must be a complete operation");
+      checkGap(state,intent.at);
+      validateTableCreate(state,intent,{resolve:at=>engine.resolveGap(state,at),fail:m=>new engine.Conflict("Admission: "+m)});
       return;
     case "richInsert":
       if (inBatch) fail("Rich insertion must be a complete operation");

@@ -1,3 +1,4 @@
+import {executeTableCreate} from './table-creation.js';
 // SPDX-License-Identifier: MPL-2.0
 import { executeTextClaim, validateTextClaims } from "./text-claims.js";
 import {
@@ -752,6 +753,8 @@ function execute(state, intent, action, materialization = null) {
     resumeCreationPlacements(state, boundaryPath, creationHost);
     return inverse;
   }
+  if (["tableCreate","tableCreationActive"].includes(intent.kind))
+    return executeTableCreate(state,intent,action,{write:field=>writable(state,field),remember:(id,block,offset)=>rememberBoundary(state,id,block,offset),resolve:gap=>resolveGap(state,gap),fail:m=>new Conflict(m)});
   if (intent.kind === "creationItemMove")
     return execute(
       state,
@@ -1008,6 +1011,7 @@ export function apply(state, op, validateFinalShape = null) {
         "restoreTableOrder",
         "restoreColumnWidth",
         "tableDeletionActive",
+        "tableCreationActive",
         "formatActive",
         "removeSplitBoundary",
         "treeRestore",

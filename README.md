@@ -96,3 +96,28 @@ A host may supply `{replay, verifyDuplicate}` as `ports.replication`; both must 
 synchronous deterministic validators. Journal-before-send, catchup ordering and
 Saved-after-journal semantics remain owned by `DocumentSession`. This hook does
 not provide authentication, access revocation, encryption or a transport.
+
+### Block insertion (alpha.3)
+
+`planInsertBlock` (core commands) and the browser controller's
+`captureInsertion()` / `insertBlock(options, bookmark)` provide explicit bullet
+list, numbered list, code block and regular table insertion. The host owns the
+buttons, dialogs and notices; the controller owns selection, history and commit.
+
+Table creation currently accepts 1–20 rows and 1–12 columns at the end of a
+body paragraph. Mid-paragraph and nested-table insertion are rejected explicitly.
+Creation Undo refuses to remove a table with later text or structural changes;
+row/column editing and reviewed deletion remain separate commands.
+
+This adds wire version **44** while retaining document codec **43**. Readers can
+replay existing codec43 records. Hosts must upgrade their wire gate and require
+older connected clients to reload before delivering table-creation operations.
+It is not safe to send the new command to a wire43 client. No storage rewrite is
+required. Existing experimental-format and alpha limitations still apply.
+
+Hosts that apply transport backpressure can supply the synchronous session port
+`onDurable({cursor, seq})`. It fires only after a journal write succeeds, including
+when later local edits remain pending. Use it to acknowledge durable receive
+progress independently of document rendering. Failed journal writes never release
+transport credit. Wire43 local journals, including unchanged offline pending
+operations, can reopen with wire44; other unsupported journal versions fail closed.

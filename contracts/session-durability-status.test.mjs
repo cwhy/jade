@@ -7,10 +7,10 @@ import { gapAt } from "@cwhy/jade-core/model";
 import { fixture } from "@cwhy/jade-testkit/browser-fixture";
 import { WIRE_VERSION } from "@cwhy/jade-protocol";
 
-async function harness() {
+async function harness({pending = false} = {}) {
   const room = new Room(fixture()),
     timers = new Map(),
-    statuses = [];
+    statuses = [], durable = [];
   let timer = 0,
     held = false,
     gate,
@@ -22,6 +22,7 @@ async function harness() {
     "A",
     () => statuses.push(session.status()),
     {
+      onDurable: value => durable.push({...value, diskCursor: disk.head.cursor}),
       openJournal: async () => ({
         read: async () => ({}),
         close() {},
@@ -70,6 +71,10 @@ async function harness() {
     marks: [],
   });
   await session.persistAndSend();
+  if (pending) {
+    session.client.prepare({kind:"insert",at:gapAt(session.client.state,"bp",3),text:"R",marks:[]});
+    await session.persistAndSend();
+  }
   held = true;
   await deliver({
     type: "events",
@@ -78,6 +83,7 @@ async function harness() {
   return {
     session,
     statuses,
+    durable,
     op,
     disk: () => disk,
     release: () => gate.resolve(),
@@ -108,8 +114,10 @@ test("failed acknowledgement persistence never reports Saved or loses the durabl
     s = h.session;
   try {
     assert.equal(s.status(), "Saving");
+    const notifications=h.durable.length;
     h.reject();
     await s.queue;
+    assert.equal(h.durable.length,notifications,"failed writes cannot release transport credit");
     assert.equal(s.failed, true);
     assert.match(s.status(), /editing paused/);
     assert.deepEqual(h.disk().head.pending, [h.op]);
@@ -118,4 +126,19 @@ test("failed acknowledgement persistence never reports Saved or loses the durabl
   } finally {
     s.close();
   }
+});
+
+
+test("durable progress notifies transport while later local edits remain pending", async () => {
+ const h=await harness({pending:true}),s=h.session;
+ try {
+  assert.equal(s.client.pending.length,1);
+  assert.equal(h.durable.at(-1).cursor,0);
+  const renders=h.statuses.length;
+  h.release();await s.queue;
+  assert.equal(s.client.pending.length,1);
+  assert.equal(h.statuses.length,renders,"no extra document render is required");
+  assert.deepEqual(h.durable.at(-1),{cursor:1,seq:2,diskCursor:1});
+  assert.equal(s.status(),"Saving");
+ }finally{s.close();}
 });

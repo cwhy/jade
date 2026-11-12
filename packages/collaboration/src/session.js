@@ -4,7 +4,9 @@
 // connect() -> {readyState, send, close, onopen, onmessage, onerror, onclose};
 // openState is that connection's open sentinel. schedule/cancel own timers;
 // now is monotonic milliseconds. The journal write atomically saves its supplied
-// head/events/checkpoint. Host authentication precedes these capabilities.
+// head/events/checkpoint. Optional onDurable({cursor, seq}) runs synchronously
+// after journal commit, independently of rendering, for transport flow control.
+// Host authentication precedes these capabilities.
 import { Client } from "./client.js";
 import { WIRE_VERSION } from "@cwhy/jade-protocol";
 import { replay } from "./replay.js";
@@ -92,7 +94,9 @@ export class DocumentSession {
     const saved = await this.journal.read();
     let record, stream;
     if (saved.checkpoint) {
-      if (saved.checkpoint.wire !== WIRE_VERSION)
+      // Wire44 only adds table creation; wire43 journals and immutable pending
+      // operations retain their codec43 meaning. This is a one-way reader upgrade.
+      if (saved.checkpoint.wire !== WIRE_VERSION && !(WIRE_VERSION === 44 && saved.checkpoint.wire === 43))
         throw Error(
           "Incompatible lab journal version; original journal retained",
         );
@@ -170,6 +174,7 @@ export class DocumentSession {
     this.persistedIds = new Set(head.pending.map((op) => op.id));
     this.durableCursor = head.cursor;
     this.durableSeq = head.seq;
+    this.ports.onDurable?.({ cursor: this.durableCursor, seq: this.durableSeq });
   }
   persistAndSend() {
     this.metrics.maxPending = Math.max(

@@ -75,6 +75,7 @@ export function bindSelectionController({
     if (
       ![
         "richInsert",
+        "insertBlock",
         "previewCut",
         "cut",
         "linkContext",
@@ -1108,6 +1109,14 @@ export function bindSelectionController({
   for (const [name, handler] of Object.entries(handlers))
     root.addEventListener(name, handler);
   return {
+    captureInsertion(){
+      try{const range=capture(client().state);return !composing&&!range.kind&&range.collapsed?{client:client(),range}:null;}catch{return null;}
+    },
+    insertBlock(options,bookmark){
+      try{if(composing||!bookmark||bookmark.client!==client()||!planners.insertBlock)throw new ReviewRequired("Place a caret in the document before inserting");
+        execute((state,range,op)=>planners.insertBlock(state,range,op,options),bookmark.range);return true;
+      }catch(error){notice(error.message);return false;}
+    },
     openLink(bookmark) {
       try {
         return openLink(bookmark, true);

@@ -70,3 +70,5 @@ export { previewCut, planCut } from "./cut.js";
 export { copyRange, copyBlocks } from "./copy.js";
 
 export { planRichInsert } from "./rich-insert.js";
+
+export {planInsertBlock} from './block-insertion.js';

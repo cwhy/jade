@@ -7,7 +7,7 @@ import { gapAt } from "@cwhy/jade-core/model";
 import { fixture } from "@cwhy/jade-testkit/browser-fixture";
 import { WIRE_VERSION } from "@cwhy/jade-protocol";
 
-async function harness(replication) {
+async function harness(replication, saved = {}) {
   const room = new Room(fixture()),
     trace = [],
     timers = new Map();
@@ -20,7 +20,7 @@ async function harness(replication) {
     close: () => trace.push({ kind: "socket-close" }),
   };
   const journal = {
-    read: async () => ({}),
+    read: async () => structuredClone(saved),
     write: async (head, events, checkpoint) => {
       if (failWrite) throw Error("Host journal failed");
       trace.push({
@@ -158,4 +158,22 @@ test("host replication adapter owns replay and duplicate validation without bypa
     assert.equal(replays,1);assert.equal(h.session.durableCursor,1);assert.equal(h.session.client.pending.length,0);
     h.receive({type:'event',event});await h.drain();assert.equal(duplicates,1);assert.equal(h.session.failed,undefined);
   } finally {h.session.close();}
+});
+
+
+test("wire43 journal upgrade preserves immutable pending edits and advertises wire44",async()=>{
+ const room=new Room(fixture()),record=room.snapshot();
+ const op={actor:"A",stream:"legacy",seq:1,id:"A:legacy:1",epoch:record.state.epoch,intent:{kind:"insert",at:gapAt(record.state,"bp",0),text:"offline",marks:[]}};
+ const saved={checkpoint:{wire:43,record,cursor:0},events:[],head:{stream:"legacy",seq:1,pending:[op],cursor:0}};
+ const h=await harness(undefined,saved);
+ try {
+  assert.deepEqual(h.session.client.pending,[op]);
+  assert.equal(h.trace.find(x=>x.kind==="send"&&x.message.type==="hello").message.wire,44);
+  assert.deepEqual(h.trace.find(x=>x.kind==="send"&&x.message.type==="submit").message.op,op);
+  h.receive({type:"events",events:[{cursor:1,op,receipt:h.room.accept(op)}]});await h.drain();
+  assert.equal(h.session.client.pending.length,0);assert.equal(h.session.status(),"Saved to server");
+ } finally {h.session.close();}
+});
+test("unsupported journal versions fail without rewriting the journal",async()=>{
+ for(const wire of [42,45])await assert.rejects(()=>harness(undefined,{checkpoint:{wire}}),/original journal retained/);
 });
