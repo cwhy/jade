@@ -50,5 +50,5 @@ with the demo. Changes to the workflow or site do not publish packages to npm.
 
 The reference is Elm's landing page: generous white space, modest typography,
 direct playground/guide links, square outlined buttons and explanatory examples.
-Jade uses its own green wordmark and copy. The early-software note and demo scope
+Jade uses its own green wordmark and copy. IBM Plex Sans, the reference site’s typeface, is self-hosted in `site/fonts` with its upstream OFL license and provenance. The early-software note and demo scope
 are explicit; do not add invented adoption, reliability or performance claims.
