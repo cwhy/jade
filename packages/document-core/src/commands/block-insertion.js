@@ -6,7 +6,7 @@ export function planInsertBlock(
   state,
   range,
   op,
-  { type, rows = 2, columns = 3 } = {},
+  { type, rows = 2, columns = 3, slot, width, height } = {},
 ) {
   validateDestination(state, range);
   if (
@@ -16,6 +16,17 @@ export function planInsertBlock(
     range.slices[0].type !== "paragraph"
   )
     throw new ReviewRequired("Place a caret in a paragraph to insert a block");
+  if (type === "image") {
+    const intent = {
+        kind: "imageInsert",
+        at: range.start,
+        slot,
+        width,
+        height,
+      },
+      next = apply(state, { ...op, intent });
+    return { intent, state: next, after: range.start };
+  }
   if (type === "table") {
     const intent = { kind: "tableCreate", at: range.start, rows, columns },
       next = apply(state, { ...op, intent });

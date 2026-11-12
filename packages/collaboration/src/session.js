@@ -94,9 +94,10 @@ export class DocumentSession {
     const saved = await this.journal.read();
     let record, stream;
     if (saved.checkpoint) {
-      // Wire44 only adds table creation; wire43 journals and immutable pending
-      // operations retain their codec43 meaning. This is a one-way reader upgrade.
-      if (saved.checkpoint.wire !== WIRE_VERSION && !(WIRE_VERSION === 44 && saved.checkpoint.wire === 43))
+      // Wire45 adds media lifecycle operations and an optional pending-media ledger.
+      // Prior wire43/44 journals retain their codec43 meaning and immutable
+      // operation payloads. This is a one-way reader upgrade.
+      if (saved.checkpoint.wire !== WIRE_VERSION && !(WIRE_VERSION === 45 && [43,44].includes(saved.checkpoint.wire)))
         throw Error(
           "Incompatible lab journal version; original journal retained",
         );

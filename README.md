@@ -121,3 +121,13 @@ when later local edits remain pending. Use it to acknowledge durable receive
 progress independently of document rendering. Failed journal writes never release
 transport credit. Wire43 local journals, including unchanged offline pending
 operations, can reopen with wire44; other unsupported journal versions fail closed.
+
+### Shared upload foundation (alpha.4)
+
+Wire **45** adds shared image slots and host-generated completion, preserving
+original-insert Undo and rejecting late completion after deletion/restoration.
+The pending upload generation is separate from structural content. Existing
+codec43 records and wire43/44 journals remain readable on one-way upgrade.
+This is an engine lifecycle capability; a host still needs an authorized upload
+service and image UI. See [the media contract](docs/MEDIA.md) for the authority
+boundary, supported transitions and remaining scope.

@@ -1,5 +1,6 @@
-import {validateTableCreate} from './table-creation.js';
 // SPDX-License-Identifier: MPL-2.0
+import {validateMedia, validateMediaState} from './media.js';
+import {validateTableCreate} from './table-creation.js';
 import { validateMarkerType } from "./list-marker.js";
 import { validateListNumbering } from "./list-numbering.js";
 import { validateRichInsert } from "./rich-insert.js";
@@ -47,12 +48,14 @@ function checkPublicFormat(property, value) {
 export function validateDocumentShape(state) {
   if (!record(state) || !record(state.nodes) || !id(state.root))
     fail("missing document tree");
-  const stable = isImmutable(state.nodes),
-    roots = stable ? checkedShapes.get(state.nodes) : undefined;
+  const stable = isImmutable(state.nodes) && (state.pendingMedia === undefined || isImmutable(state.pendingMedia)),
+    cached = stable ? checkedShapes.get(state.nodes) : undefined,
+    roots = cached?.media === state.pendingMedia ? cached?.roots : undefined;
   if (roots?.has(state.root)) {
     shapeCounts.hits++;
     return;
   }
+  validateMediaState(state, fail);
   shapeCounts.walks++;
   const visited = new Set();
   function walk(key, parent, inCell) {
@@ -80,7 +83,7 @@ export function validateDocumentShape(state) {
     if (n.type === "image") {
       if (Object.hasOwn(n, "children") || Object.hasOwn(n, "text"))
         fail("image block shape");
-      return; // Media lifecycle is a separate, not-yet-implemented capability.
+      return; // Upload authority remains a host responsibility.
     }
     if (
       !["doc", "cell", "row", "table", "list_item", ...lists].includes(
@@ -116,7 +119,7 @@ export function validateDocumentShape(state) {
   if (stable) {
     const checkedRoots = roots || new Set();
     checkedRoots.add(state.root);
-    checkedShapes.set(state.nodes, checkedRoots);
+    checkedShapes.set(state.nodes, { roots: checkedRoots, media: state.pendingMedia });
   }
 }
 
@@ -194,6 +197,12 @@ export function validatePublicIntent(
       if (inBatch) fail("Numbering must be a complete operation");
       validateListNumbering(state, intent);
       return;
+    case 'imageInsert':
+    case 'imageComplete':
+    case 'imageDelete':
+      if(inBatch)fail('Media commands must be complete operations');
+      if(intent.kind==='imageInsert')checkGap(state,intent.at);
+      validateMedia(state,intent,{resolve:at=>engine.resolveGap(state,at),fail:m=>new engine.Conflict('Admission: '+m)});return;
     case "tableCreate":
       if(inBatch)fail("Table creation must be a complete operation");
       checkGap(state,intent.at);

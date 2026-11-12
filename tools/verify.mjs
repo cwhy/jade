@@ -6,6 +6,7 @@ import {
   writeFileSync,
   readdirSync,
   cpSync,
+  existsSync,
 } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -81,6 +82,10 @@ run(process.execPath, ["examples/basic-editing.mjs"], consumer, "example");
 const scope = JSON.parse(
   readFileSync(path.join(root, "verification/test-scope.json")),
 );
+for (const name of scope.included_test_roots) {
+  assert.equal(path.basename(name),name,'Contract inventory entries must be filenames');
+  assert.ok(existsSync(path.join(consumer,'contracts',name)),'Missing contract root: '+name);
+}
 const contracts = run(
   process.execPath,
   ["--test", ...scope.included_test_roots.map((x) => "contracts/" + x)],

@@ -3,7 +3,7 @@ import { apply, gapAt } from "../model/engine.js";
 import { deletionPlan } from "../model/table-deletion.js";
 import { tableContext } from "./table-context.js";
 import { captureCellRange, tableGrid } from "../selection/grid.js";
-import { copyCells } from "./cell-paste.js";
+import { previewCells } from "./cell-paste.js";
 function cells(state, selection) {
   if (selection.kind === "cells") return selection;
   const c = tableContext(state, selection);
@@ -16,7 +16,7 @@ export function previewTableDelete(state, selection, axis) {
     version: 1,
     ...p,
     selection: selected,
-    before: copyCells(state, p.range),
+    before: previewCells(state, p.range),
   };
 }
 export function planTableDelete(state, selection, op, { preview }) {

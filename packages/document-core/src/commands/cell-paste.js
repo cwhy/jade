@@ -11,9 +11,26 @@ import {
 import { cellWitness } from "../model/cell-clear.js";
 import { validateGridFragment, validateGridAssets } from "../grid-fragment.js";
 export function copyCells(state, range) {
+  return cellFragment(state, range, false);
+}
+// Read-only destructive preview can label an unresolved image; transfer cannot.
+export function previewCells(state, range) {
+  return cellFragment(state, range, true);
+}
+function cellFragment(state, range, preview) {
   const r = resolveCellRange(state, range);
   function block(id) {
     const n = state.nodes[id];
+    if (n.type === "image" && !n.asset) {
+      if (!preview)
+        throw Error(
+          "Image upload is incomplete; finish uploading before copying",
+        );
+      return {
+        type: "paragraph",
+        content: [{ text: "[Image upload pending]", marks: [] }],
+      };
+    }
     const attrs = {};
     for (const k of ["language", "order", "asset", "alt", "width", "height"])
       if (n[k] !== undefined) attrs[k] = n[k];
@@ -105,7 +122,7 @@ export function previewCellPaste(state, selection, input, mode = "match") {
       rows: p.cells.map((row) =>
         row.map((id) =>
           id
-            ? copyCells(state, captureCellRange(state, selected.table, id))
+            ? previewCells(state, captureCellRange(state, selected.table, id))
                 .rows[0][0]
             : [{ type: "paragraph", content: [] }],
         ),

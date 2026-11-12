@@ -20,6 +20,6 @@ jade does not authenticate users, issue permissions, host WebSockets or write da
 
 ## Versions
 
-Alpha.3 retains document codec 43 and uses wire version 44 for explicit table creation. It can replay existing codec43 records; hosts must gate old clients before delivering new operations. Package versions, document codecs and wire versions are separate concepts. A package rename does not migrate persisted data. Unknown or incompatible formats must be rejected explicitly rather than silently rewritten.
+Alpha.4 retains document codec 43 and uses wire version 45 for shared image upload lifecycle operations, following wire44 table creation. Upload generations live in an optional pendingMedia ledger separate from structural node snapshots; see [MEDIA.md](MEDIA.md). It can replay existing codec43 records; hosts must gate old clients before delivering new operations. Package versions, document codecs and wire versions are separate concepts. A package rename does not migrate persisted data. Unknown or incompatible formats must be rejected explicitly rather than silently rewritten.
 
 The current public subpath exports are listed in each package's `package.json`. Boundary checks enforce declared dependencies, prohibit cycles and require public imports across packages.

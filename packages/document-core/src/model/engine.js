@@ -1,5 +1,6 @@
-import {executeTableCreate} from './table-creation.js';
 // SPDX-License-Identifier: MPL-2.0
+import {executeMedia,fenceMedia} from './media.js';
+import {executeTableCreate} from './table-creation.js';
 import { executeTextClaim, validateTextClaims } from "./text-claims.js";
 import {
   placementBoundaryPath,
@@ -753,6 +754,7 @@ function execute(state, intent, action, materialization = null) {
     resumeCreationPlacements(state, boundaryPath, creationHost);
     return inverse;
   }
+  if(['imageInsert','imageComplete','imageDelete','imagePresence','mediaNoop'].includes(intent.kind))return executeMedia(state,intent,action,{write:field=>writable(state,field),resolve:gap=>resolveGap(state,gap),fail:m=>new Conflict(m)});
   if (["tableCreate","tableCreationActive"].includes(intent.kind))
     return executeTableCreate(state,intent,action,{write:field=>writable(state,field),remember:(id,block,offset)=>rememberBoundary(state,id,block,offset),resolve:gap=>resolveGap(state,gap),fail:m=>new Conflict(m)});
   if (intent.kind === "creationItemMove")
@@ -1012,6 +1014,8 @@ export function apply(state, op, validateFinalShape = null) {
         "restoreColumnWidth",
         "tableDeletionActive",
         "tableCreationActive",
+        "imagePresence",
+        "mediaNoop",
         "formatActive",
         "removeSplitBoundary",
         "treeRestore",
@@ -1096,6 +1100,7 @@ export function apply(state, op, validateFinalShape = null) {
       throw new Conflict("Invalid Undo group");
     const inverses = ids.map((id) => {
       const target = state.effects[id];
+      if (target?.system) throw new Conflict("Upload completion is not a user Undo action");
       if (!target || target.actor !== op.actor)
         throw new Conflict("Undo belongs to another actor");
       if (Object.values(state.effects).some((e) => e.undoes?.includes(id)))
@@ -1133,8 +1138,10 @@ export function apply(state, op, validateFinalShape = null) {
     );
   projectCreations(next, projectionHost);
   if (rebuildProjection) projectJoins(next, op.id, projectionHost);
+  fenceMedia(state,next,op.id,field=>writable(next,field));
   writable(next, "effects")[op.id] = {
     actor: op.actor,
+    ...(op.intent.kind==="imageComplete"?{system:true}:{}),
     inverse,
     ...(op.intent.kind === "undo"
       ? { undoes: op.intent.targets || [op.intent.target] }
@@ -1146,6 +1153,7 @@ export function apply(state, op, validateFinalShape = null) {
   // mutable publication window. Mutable/decode inputs keep their old fallback.
   if (isImmutable(state)) {
     immutable(next.nodes);
+    immutable(next.pendingMedia);
     immutable(next.replicas);
     immutable(next.runs);
   }
@@ -1246,6 +1254,7 @@ export function validate(state, incremental = false) {
 export function seed(nodes, contents, root = "doc") {
   const state = {
     storageCodec: 43,
+    pendingMedia: {},
     textClaims: {},
     textMasks: {},
     creations: {},

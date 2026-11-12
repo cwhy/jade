@@ -1,6 +1,6 @@
 {
   "name": "@cwhy/jade-collaboration",
-  "version": "0.1.0-alpha.3",
+  "version": "0.1.0-alpha.4",
   "private": true,
   "type": "module",
   "license": "MPL-2.0",
@@ -16,8 +16,8 @@
     "./public-replication": "./src/public-replication.js"
   },
   "dependencies": {
-    "@cwhy/jade-core": "0.1.0-alpha.3",
-    "@cwhy/jade-protocol": "0.1.0-alpha.3"
+    "@cwhy/jade-core": "0.1.0-alpha.4",
+    "@cwhy/jade-protocol": "0.1.0-alpha.4"
   },
   "repository": {
     "type": "git",

@@ -4,7 +4,7 @@ jade is an alpha implementation, not a complete editor product or a stable stora
 
 ## Reproducible coverage
 
-The standalone suite contains 31 internal checks and 2,983 public-contract checks across 78 roots. It exercises text/formatting, rich lists and tables, identity/anchor behavior, owned Undo, client/replay contracts and selected persistence schedules.
+The standalone suite contains 31 internal checks and 3,013 public-contract checks across 79 roots. It exercises text/formatting, rich lists and tables, identity/anchor behavior, owned Undo, client/replay contracts and selected persistence schedules.
 
 `npm test` uses real tarballs in an independent consumer rather than workspace symlinks. Run it to verify the current revision. Counts describe a bounded corpus, not a completion percentage.
 
@@ -18,7 +18,7 @@ Application-dependent browser, native-input, transport and deployment checks are
 - Final accessibility, native input and Windows Chrome behavior.
 - Full integrated retention, performance, recovery and compatibility gates.
 
-Image nodes refer to host-managed assets. The library does not upload or authorize files. Local Undo is distinct from user-facing document history. Model convergence alone is not evidence of browser-input correctness.
+Alpha.4 adds shared upload-slot lifecycle, stale-completion fencing and repeated structural Undo/Redo checks. The optional pending-media ledger is separate from content snapshots; see [MEDIA.md](MEDIA.md). Image nodes refer to host-managed assets. The library does not upload or authorize files. Local Undo is distinct from user-facing document history. Model convergence alone is not evidence of browser-input correctness.
 
 ## Host responsibilities
 

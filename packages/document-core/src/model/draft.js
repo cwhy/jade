@@ -4,6 +4,7 @@ import { isImmutable } from "./immutable.js";
 // All mutations of these collections must go through writable()/erase().
 const drafts = new WeakMap();
 const fields = new Set([
+  "pendingMedia",
   "textClaims",
   "textMasks",
   "creationPlacements",
