@@ -148,7 +148,7 @@ export function executeAttachedSourcePaste(state, slice, at, action, host) {
   ]) {
     if (state.nodes[id]) throw host.fail("Pasted identity reused");
     const n = { id, type: b.type, live: true, richLifecycle: action };
-    for (const key of ["language", "asset", "alt", "width", "height"])
+    for (const key of ["language", "asset", "alt", "width", "height", "displayWidth"])
       if (b[key] !== undefined) n[key] = b[key];
     if (b.content) {
       n.text = id + ":text";

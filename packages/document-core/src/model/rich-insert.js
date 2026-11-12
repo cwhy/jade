@@ -432,7 +432,7 @@ export function executeRichInsert(state, intent, action, host) {
     if (state.nodes[id]) throw host.fail("Pasted identity reused");
     if (itemDestination && b.type === "list_item" && blocks.includes(b))
       n.markerBase = sourceType;
-    for (const key of ["order", "language", "asset", "alt", "width", "height"])
+    for (const key of ["order", "language", "asset", "alt", "width", "height", "displayWidth"])
       if (b[key] !== undefined) n[key] = b[key];
     if (b.content) {
       n.text = `${id}:text`;

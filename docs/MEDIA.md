@@ -1,4 +1,4 @@
-# Shared image upload lifecycle (alpha.5)
+# Shared image upload lifecycle (alpha.6)
 
 This is the engine foundation for uploads, not a file-upload service or a complete
 image UI. The host remains responsible for identity, access, file validation,
@@ -77,7 +77,7 @@ any older generation is rejected. Historical snapshots remain unchanged.
 Direct image Undo currently checks that the image is still in its original
 parent and that its image-presence ownership has not changed. Broader dependent
 move/paste ownership semantics must be qualified before exposing those image
-commands in the product. Resize, caption, replacement, rich-paste upload slots,
+commands in the product. Caption, replacement, rich-paste upload slots,
 export and copy-with-assets remain separate work.
 
 Normal grid copying rejects unresolved images. A destructive-operation preview
@@ -86,8 +86,8 @@ transferable image. Normal copy/export completion must still require all assets.
 
 ## Compatibility and evidence
 
-Alpha.5 uses wire 46. Codec 43 records without the optional `pendingMedia` map
-remain readable. Wire 43/44/45 journals preserve immutable pending payloads on
+Alpha.6 uses wire 47. Codec 43 records without the optional `pendingMedia` map
+remain readable. Wire 43/44/45/46 journals preserve immutable pending payloads on
 one-way upgrade. Hosts must fence older clients before delivering new media
 operations or checkpoints; do not downgrade a room that contains these records.
 
@@ -122,3 +122,32 @@ anchors, same-gap images, both arrival orders for typing/Enter, offline erased
 text, repeated Undo/Redo, duplicate delivery, reload/replay, generation fencing,
 and guarded cross-container/multi-paragraph input. Browser/file transport must
 still be qualified by each host.
+
+## Display sizing (alpha.6)
+
+`previewImageSize(state, imageId)` captures the live image, container, original
+asset/dimensions, presence ownership and current display-size ownership.
+`planImageSize(state, selection, op, {preview, width})` creates one `imageResize`
+operation for a whole-pixel width from 48 through 10,000. Hosts additionally clamp
+to available container width; the model has no viewport. Original tiny images
+retain their natural initial width until explicitly resized.
+
+The optional `displayWidth` affects rendering only; `width`/`height` and asset
+bytes remain the original descriptor. Rendering derives height proportionally.
+The host previews without model mutations, commits on release or numeric Apply,
+and cancels on Escape, pointer cancellation, layout/access loss or a stale target.
+
+Resize Undo/Redo validates the current size witness and cannot overwrite another
+author's newer size. Once that later size is undone, earlier Undo can proceed.
+Undo of the original image insertion also refuses to erase an image with a later
+size owner; explicit deletion captures that owner and its Undo restores the size.
+This is the same conservative ownership rule used for table sizing, not a
+formatting-contribution register.
+
+Rich/grid image fragments carry optional `displayWidth`, preserving original
+width/height and omitting ownership tokens. Pasting preserves the display width.
+Unknown older clipboard readers may reject that newer optional field.
+
+The 18 image-size contracts cover bounds, unchanged originals, exact Undo/Redo,
+concurrent sizing, peer typing, pending-image rejection, insertion/deletion
+ownership, reload/replay, malformed state and copy/paste metadata preservation.

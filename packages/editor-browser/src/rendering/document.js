@@ -127,8 +127,8 @@ export function createDocumentRenderer(
           if (source == null) img.removeAttribute("src");
           else img.src = source;
           img.alt = imageAlt(n);
-          img.width = n.width || 180;
-          img.height = n.height || 50;
+          img.width = n.displayWidth ?? (n.width || 180);
+          img.height = Math.max(1, Math.round(img.width * (n.height || 50) / (n.width || 180)));
           if (!img.parentNode) el.append(img);
         }
         entry.node = n;

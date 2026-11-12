@@ -72,3 +72,5 @@ export { copyRange, copyBlocks } from "./copy.js";
 export { planRichInsert } from "./rich-insert.js";
 
 export {planInsertBlock} from './block-insertion.js';
+
+export {previewImageSize,planImageSize} from './image-size.js';

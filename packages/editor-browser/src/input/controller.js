@@ -76,6 +76,8 @@ export function bindSelectionController({
       ![
         "richInsert",
         "insertBlock",
+        "previewImageSize",
+        "imageSize",
         "previewCut",
         "cut",
         "linkContext",
@@ -1635,6 +1637,20 @@ export function bindSelectionController({
         notice(error.message);
         return false;
       }
+    },
+    beginImageSize(image) {
+      try {
+        if(composing || !planners.previewImageSize || !planners.imageSize)throw new ReviewRequired("Image sizing is unavailable during composition");
+        const c=client(),preview=planners.previewImageSize(c.state,image);let range;
+        try{range=capture(c.state);}catch{const block=selectionStructure(c.state).order[0];range=captureRange(c.state,{block,offset:0},{block,offset:0});}
+        return {client:c,preview,range};
+      }catch(error){notice(error.message);return null;}
+    },
+    checkImageSize(lease) {
+      if(composing||client()!==lease.client||JSON.stringify(planners.previewImageSize(client().state,lease.preview.image))!==JSON.stringify(lease.preview))throw new ReviewRequired("Image changed; start resizing again");
+    },
+    commitImageSize(lease,width) {
+      try{this.checkImageSize(lease);execute((state,r,op)=>planners.imageSize(state,r,op,{preview:lease.preview,width}),lease.range,lease.range.kind||null);return true;}catch(error){notice(error.message);return false;}
     },
     beginColumnResize(cell) {
       try {

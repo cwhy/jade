@@ -144,3 +144,13 @@ replacement and middle-of-list-item placement remain guarded.
 Codec **43** and wire43/44/45 offline journals remain readable on one-way upgrade.
 Hosts must advance their wire gate and close older clients before new operations
 are delivered. See [MEDIA.md](docs/MEDIA.md) for scope and lifecycle semantics.
+
+### Image display sizing (alpha.6)
+
+Wire **47** adds `previewImageSize` / `planImageSize` and browser-controller
+size leases. The host supplies corner handles, a local drag preview and numeric
+width UI. Only release/Apply commits. Original assets and natural dimensions stay
+unchanged; optional `displayWidth` renders proportionally and survives rich/grid
+copy without transferring ownership. Stale resize and Undo cannot overwrite a
+newer peer size. Codec43 and wire43–46 journals remain readable on one-way upgrade.
+See [MEDIA.md](docs/MEDIA.md) for bounds, lifecycle and host responsibilities.

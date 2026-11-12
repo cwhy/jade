@@ -161,19 +161,19 @@ test("host replication adapter owns replay and duplicate validation without bypa
 });
 
 
-for(const wire of [43,44,45])test(`wire${wire} journal upgrade preserves immutable pending edits and advertises wire46`,async()=>{
+for(const wire of [43,44,45,46])test(`wire${wire} journal upgrade preserves immutable pending edits and advertises wire47`,async()=>{
  const room=new Room(fixture()),record=room.snapshot();
  const op={actor:"A",stream:"legacy",seq:1,id:"A:legacy:1",epoch:record.state.epoch,intent:{kind:"insert",at:gapAt(record.state,"bp",0),text:"offline",marks:[]}};
  const saved={checkpoint:{wire,record,cursor:0},events:[],head:{stream:"legacy",seq:1,pending:[op],cursor:0}};
  const h=await harness(undefined,saved);
  try {
   assert.deepEqual(h.session.client.pending,[op]);
-  assert.equal(h.trace.find(x=>x.kind==="send"&&x.message.type==="hello").message.wire,46);
+  assert.equal(h.trace.find(x=>x.kind==="send"&&x.message.type==="hello").message.wire,47);
   assert.deepEqual(h.trace.find(x=>x.kind==="send"&&x.message.type==="submit").message.op,op);
   h.receive({type:"events",events:[{cursor:1,op,receipt:h.room.accept(op)}]});await h.drain();
   assert.equal(h.session.client.pending.length,0);assert.equal(h.session.status(),"Saved to server");
  } finally {h.session.close();}
 });
 test("unsupported journal versions fail without rewriting the journal",async()=>{
- for(const wire of [42,47])await assert.rejects(()=>harness(undefined,{checkpoint:{wire}}),/original journal retained/);
+ for(const wire of [42,48])await assert.rejects(()=>harness(undefined,{checkpoint:{wire}}),/original journal retained/);
 });

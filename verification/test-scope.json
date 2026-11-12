@@ -79,7 +79,8 @@
     "public-replication.test.mjs",
     "block-insertion.test.mjs",
     "media-lifecycle.test.mjs",
-    "image-placement.test.mjs"
+    "image-placement.test.mjs",
+    "image-size.test.mjs"
   ],
   "included_files": [
     "attached-source-peer-gate.test.mjs",

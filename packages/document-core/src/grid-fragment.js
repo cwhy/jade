@@ -68,7 +68,14 @@ export function validateGridFragment(value) {
       };
     }
     if (t === "image") {
-      exact(b, ["type", "asset", "alt", "width", "height"]);
+      exact(b, ["type", "asset", "alt", "width", "height", "displayWidth"]);
+      if (
+        b.displayWidth !== undefined &&
+        (!Number.isSafeInteger(b.displayWidth) ||
+          b.displayWidth < 48 ||
+          b.displayWidth > 10000)
+      )
+        throw Error("Invalid image display width");
       if (typeof b.asset !== "string" || !b.asset || b.asset.length > 512)
         throw Error("Invalid image asset reference");
       if (

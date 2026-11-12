@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+import {executeImageSize,validateImageSize} from './image-size.js';
 import {executeMedia,fenceMedia} from './media.js';
 import {executeImagePlacement} from './image-placement.js';
 import {executeTableCreate} from './table-creation.js';
@@ -755,6 +756,7 @@ function execute(state, intent, action, materialization = null) {
     resumeCreationPlacements(state, boundaryPath, creationHost);
     return inverse;
   }
+  if(['imageResize','restoreImageSize'].includes(intent.kind))return executeImageSize(state,intent,action,{write:field=>writable(state,field),fail:m=>new Conflict(m)});
   if(intent.kind === 'imagePlace') return executeImagePlacement(state,intent,action,{execute:(i,id)=>execute(state,i,id,materialization),write:field=>writable(state,field),resolve:gap=>resolveGap(state,gap),gap:(id,offset)=>gapAt(state,id,offset),fail:m=>new Conflict(m)});
   if(['imageInsert','imageComplete','imageDelete','imagePresence','mediaNoop'].includes(intent.kind))return executeMedia(state,intent,action,{write:field=>writable(state,field),resolve:gap=>resolveGap(state,gap),fail:m=>new Conflict(m)});
   if (["tableCreate","tableCreationActive"].includes(intent.kind))
@@ -1017,6 +1019,7 @@ export function apply(state, op, validateFinalShape = null) {
         "tableDeletionActive",
         "tableCreationActive",
         "imagePresence",
+        "restoreImageSize",
         "mediaNoop",
         "formatActive",
         "removeSplitBoundary",
@@ -1094,6 +1097,7 @@ export function apply(state, op, validateFinalShape = null) {
       find: (id) => findCharacter(state, id),
       fail: (m) => new Conflict(m),
     });
+  if(op.intent.kind === "imageResize") validateImageSize(state,op.intent);
   const next = stage(state);
   let intent = op.intent;
   if (intent.kind === "undo") {

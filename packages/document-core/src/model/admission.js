@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+import {validateImageSize,validateImageSizes} from './image-size.js';
 import {validateMedia, validateMediaState} from './media.js';
 import {validateImagePlacement} from './image-placement.js';
 import {validateTableCreate} from './table-creation.js';
@@ -57,6 +58,7 @@ export function validateDocumentShape(state) {
     return;
   }
   validateMediaState(state, fail);
+  validateImageSizes(state, fail);
   shapeCounts.walks++;
   const visited = new Set();
   function walk(key, parent, inCell) {
@@ -198,6 +200,9 @@ export function validatePublicIntent(
       if (inBatch) fail("Numbering must be a complete operation");
       validateListNumbering(state, intent);
       return;
+    case 'imageResize':
+      if(inBatch)fail('Image resizing must be a complete operation');
+      validateImageSize(state,intent);return;
     case 'imagePlace':
       if(inBatch)fail('Media commands must be complete operations');
       checkGap(state,intent.at);

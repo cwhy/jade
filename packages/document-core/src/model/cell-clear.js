@@ -232,6 +232,7 @@ export function executeCellClear(
         "alt",
         "width",
         "height",
+        "displayWidth",
       ])
         if (b[key] !== undefined) n[key] = b[key];
       if (b.content) {

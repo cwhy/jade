@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+import {imageCopy} from "../model/image-size.js";
 import { listMarkers } from "../model/list-marker.js";
 import { CELL_STYLE_PROPERTIES } from "../model/table-format.js";
 import { expansionPlan } from "../model/expanding-paste.js";
@@ -31,6 +32,7 @@ function cellFragment(state, range, preview) {
         content: [{ text: "[Image upload pending]", marks: [] }],
       };
     }
+    if(n.type === "image")return imageCopy(n);
     const attrs = {};
     for (const k of ["language", "order", "asset", "alt", "width", "height"])
       if (n[k] !== undefined) attrs[k] = n[k];

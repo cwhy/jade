@@ -143,6 +143,7 @@ export function executeMedia(state, intent, action, host) {
         after: parent.children[position - 1] || null,
         active: false,
         expected: node.imageOwner,
+        sizeOwner: node.imageSizeOwner ?? null,
       },
       action,
       host,
@@ -153,6 +154,7 @@ export function executeMedia(state, intent, action, host) {
   if (
     !node ||
     node.imageOwner !== intent.expected ||
+    (node.imageSizeOwner ?? null) !== (intent.sizeOwner ?? null) ||
     node.live === intent.active ||
     !parent?.live
   )

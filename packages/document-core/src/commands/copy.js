@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+import {imageCopy} from "../model/image-size.js";
 import { text } from "../model/engine.js";
 import { resolveBlockRange } from "../selection/blocks.js";
 import { listMarkers } from "../model/list-marker.js";
@@ -79,11 +80,7 @@ export function copyRange(state, input) {
       return selected.has(n.id) ? leaf(state, selected.get(n.id)) : null;
     if (n.type === "image") {
       if (positions.get(n.id) < lo || positions.get(n.id) > hi) return null;
-      return Object.fromEntries(
-        ["type", "asset", "alt", "width", "height"]
-          .filter((k) => n[k] !== undefined)
-          .map((k) => [k, n[k]]),
-      );
+      return imageCopy(n);
     }
     if (
       !["doc", "cell", "ordered_list", "bullet_list", "list_item"].includes(
@@ -233,11 +230,7 @@ export function copyBlocks(state, selection) {
   function block(n) {
     if (n.text) return leaf(state, { block: n.id, atoms: text(state, n.id) });
     if (n.type === "image")
-      return Object.fromEntries(
-        ["type", "asset", "alt", "width", "height"]
-          .filter((k) => n[k] !== undefined)
-          .map((k) => [k, n[k]]),
-      );
+      return imageCopy(n);
     if (["ordered_list", "bullet_list"].includes(n.type))
       return listGroups(state, n, block);
     if (n.type === "list_item")
