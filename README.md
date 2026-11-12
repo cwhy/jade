@@ -18,6 +18,10 @@ Authentication, permissions, hosting, databases, asset storage and application s
 
 ## Try it
 
+Open the [Jade playground](https://cwhy.github.io/jade/) to try two collaborating
+editors in one browser tab. The demo uses the real engine with an in-memory
+authority; it does not upload text or persist edits. See the [short guide](https://cwhy.github.io/jade/guide.html).
+
 Requirements: Node.js 22.13 or newer and npm. No registry packages are required to run the standalone suite.
 
 ```sh
@@ -42,6 +46,18 @@ npm run pack:local
 ```
 
 This creates tarballs and `package-set.json` in `artifacts/packages`. Install the coordinated package set by file path. The packages are **not published to npm**; `private: true` prevents accidental registry publication.
+
+To build and serve the public site locally:
+
+```sh
+npm run site:build
+npm run site:serve
+```
+
+Open `http://localhost:4173`. The site uses native browser modules and a generated
+import map of public package exports. GitHub Pages publishes only `artifacts/site`,
+not the working tree. The deploy workflow runs the engine contracts and the site
+integration checks before publication. See [site maintenance](docs/SITE.md).
 
 ## Packages
 

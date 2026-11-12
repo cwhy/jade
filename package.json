@@ -13,14 +13,17 @@
   "scripts": {
     "test": "node tools/verify.mjs",
     "verify": "node tools/verify.mjs",
-    "pack:local": "node tools/pack.mjs"
+    "pack:local": "node tools/pack.mjs",
+    "site:build": "node tools/build-site.mjs",
+    "site:serve": "node tools/serve-site.mjs",
+    "site:test": "node --test tools/test-site.mjs"
   },
   "description": "jade (just-a-doc-engine): an experimental rich-document editing engine",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/cwhy/jade.git"
   },
-  "homepage": "https://github.com/cwhy/jade",
+  "homepage": "https://cwhy.github.io/jade/",
   "bugs": {
     "url": "https://github.com/cwhy/jade/issues"
   }

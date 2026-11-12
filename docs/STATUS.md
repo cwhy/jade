@@ -4,7 +4,7 @@ jade is an alpha implementation, not a complete editor product or a stable stora
 
 ## Reproducible coverage
 
-The standalone suite contains 31 internal checks and 2,958 public-contract checks across 76 roots. It exercises text/formatting, rich lists and tables, identity/anchor behavior, owned Undo, client/replay contracts and selected persistence schedules.
+The standalone suite contains 31 internal checks and 2,963 public-contract checks across 77 roots. It exercises text/formatting, rich lists and tables, identity/anchor behavior, owned Undo, client/replay contracts and selected persistence schedules.
 
 `npm test` uses real tarballs in an independent consumer rather than workspace symlinks. Run it to verify the current revision. Counts describe a bounded corpus, not a completion percentage.
 

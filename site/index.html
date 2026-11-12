@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="jade is an open-source rich-document editing engine. Try two collaborating editors, rich table cells, and per-editor Undo in your browser.">
+  <meta name="theme-color" content="#237c68">
+  <title>jade — just-a-doc-engine</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css">
+  <!-- IMPORT_MAP -->
+  <script type="module" src="./playground.js"></script>
+</head>
+<body>
+  <a class="skip" href="#playground">Skip to playground</a>
+  <header class="site-header wrap">
+    <a class="wordmark" href="./" aria-label="jade home">jade</a>
+    <nav aria-label="Main navigation"><a href="#playground">Playground</a><a href="./guide.html">Guide</a><a href="https://github.com/cwhy/jade">GitHub</a></nav>
+  </header>
+  <main class="wrap">
+    <section class="hero" aria-labelledby="headline">
+      <div class="hero-wordmark" aria-hidden="true">jade</div>
+      <div class="hero-copy">
+        <h1 id="headline">A document engine<br>for building together.</h1>
+        <div class="hero-actions"><a class="button primary" href="#playground">Try the playground</a><a class="button" href="./guide.html">Read the guide</a></div>
+        <p class="byline">just-a-doc-engine · Open source · MPL-2.0</p>
+      </div>
+      <p class="alpha">Early software, built in the open. <a href="https://github.com/cwhy/jade/blob/main/docs/STATUS.md">APIs and document formats may change.</a></p>
+    </section>
+    <section class="playground section" id="playground" aria-labelledby="playground-title">
+      <h2 id="playground-title">Two editors. One document.</h2>
+      <p class="intro">Type on either side. Undo your own edits. Disconnect, keep writing, then reconnect.</p>
+      <div id="editors" class="editors" aria-busy="true"><p class="loading" role="status">Opening the playground…</p></div>
+      <noscript><p>This playground needs JavaScript. You can still <a href="./guide.html">read the guide</a> or <a href="https://github.com/cwhy/jade">browse the source</a>.</p></noscript>
+      <div class="demo-footer"><p>A local collaboration demo. Your text stays in this browser tab.</p><button id="reset" class="text-button" hidden>Reset sample</button></div>
+      <p class="demo-detail">Two independent editing clients share an in-memory authority. Nothing is uploaded or saved after you close or reload this page. This demonstrates editing behavior, not network performance.</p>
+    </section>
+    <section class="feature section" aria-labelledby="rich-title">
+      <div><h2 id="rich-title">Rich documents,<br>all the way down.</h2><p>Paragraphs, lists, code blocks and image references can live inside table cells. The structure is part of the document, so your editor can work with more than a grid of text.</p><a href="./guide.html#documents">Explore the document model →</a></div>
+      <div class="example-table"><table><thead><tr><th>Contents</th><th>Example</th></tr></thead><tbody><tr><td>Paragraph</td><td>A short paragraph in a table cell.</td></tr><tr><td>List</td><td><ul><li>First item</li><li>Second item</li></ul></td></tr><tr><td>Code block</td><td><pre>const title = "Field notes";</pre></td></tr><tr><td>Image reference</td><td><code>asset: "trail-map"</code><small>Your app provides the image.</small></td></tr></tbody></table></div>
+    </section>
+    <section class="feature section" aria-labelledby="host-title">
+      <div><h2 id="host-title">Your interface.<br>Your infrastructure.</h2><p>Jade handles editing and collaboration. Your app owns the interface, permissions, storage and transport.</p><p>Use the browser adapter, or build around the document model. There is no React dependency and no hosted service to sign up for.</p><a href="./guide.html#integration">See how the pieces fit →</a></div>
+      <div class="packages" aria-label="Main Jade packages"><code>@cwhy/jade-core</code><code>@cwhy/jade-browser</code><code>@cwhy/jade-collaboration</code><p>One repository. Small, explicit package boundaries.</p></div>
+    </section>
+  </main>
+  <footer class="site-footer wrap"><a class="wordmark" href="./">jade</a><nav aria-label="Footer"><a href="https://github.com/cwhy/jade">Source</a><a href="https://github.com/cwhy/jade/blob/main/LICENSE">License</a><a href="https://github.com/cwhy/jade/blob/main/docs/STATUS.md">Status</a></nav></footer>
+</body>
+</html>
