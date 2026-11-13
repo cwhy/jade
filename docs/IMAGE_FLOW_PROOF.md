@@ -67,3 +67,25 @@ editing inside its list, add compatibility gates, then test the app's caret,
 picker/paste, rendering, and uploads using the packaged candidate. No application
 dependency, deployed service, public release or native-input behavior changed
 in this proof.
+
+## November 13 follow-up: container deletion/restoration
+
+Projection now recognizes a canonical list retired by cell clear or structural
+row/column/table deletion, provided every managed image belonging to that list
+is also retired. It retains the ownership ledger without rebuilding the deleted
+view. Fully retired paragraph families likewise have no visible projection.
+Unexplained missing/moved live scopes still fail instead of being silently ignored.
+
+Added 37 cases: start/middle/end placement under clear/row/column/table removal;
+pending and completed uploads; reload/replay and duplicate receipts across
+deletion/restoration; stale generation rejection; repeated Undo/Redo; and an
+unaffected image flow in another cell. The new file now contains 187 cases.
+
+The existing destructive witness rule remains: completion after restoration
+changes the content, so a stale deletion Redo is rejected. A fresh reviewed
+deletion can remove it and Undo restores the completed asset. This change does
+not relax witness checking or imply that a stale Redo silently deletes new data.
+
+This qualifies these bounded container-retirement schedules. It does not yet
+qualify replacement paste, merges/joins, arbitrary moves, projected-wrapper
+commands, codec/wire migration, or application/browser integration.

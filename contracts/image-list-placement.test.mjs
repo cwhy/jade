@@ -440,3 +440,173 @@ test("unrelated typing retains image projection and node-map identity", () => {
   );
   validate(room.record.state);
 });
+
+import {
+  planClearCells,
+  planTableDelete,
+  previewTableDelete,
+} from "@cwhy/jade-core/commands";
+import { captureCellRange } from "@cwhy/jade-core/table-selection";
+for (const action of ["clear", "rows", "columns", "table"])
+  for (const offset of [0, 10, 18])
+    test(`active image flow ${action} restore offset=${offset}`, () => {
+      const s = fixture(),
+        a = insertion(s, offset);
+      let n = apply(s, a);
+      const range = captureCellRange(n, "table", "cell"),
+        d = op("B", 1);
+      const planned =
+        action === "clear"
+          ? planClearCells(n, range, d)
+          : planTableDelete(n, range, d, {
+              preview: previewTableDelete(n, range, action),
+            });
+      n = apply(n, { ...d, intent: planned.intent });
+      assert.equal(n.nodes[a.id + ":image"].live, false);
+      validate(n);
+      n = undo(n, "B", 2, d.id);
+      validate(n);
+      assert.deepEqual(projection(n), projection(apply(s, a)));
+      assert.equal(n.pendingMedia[a.id + ":image"].generation, "B:s:2");
+      n = undo(n, "B", 3, "B:s:2");
+      n = undo(n, "B", 4, "B:s:3");
+      validate(n);
+      assert.equal(n.pendingMedia[a.id + ":image"].generation, "B:s:4");
+      n = undo(n);
+      assert.deepEqual(projection(n), projection(s));
+    });
+for (const action of ["clear", "rows", "columns", "table"])
+  for (const offset of [0, 10, 18])
+    for (const completed of [false, true])
+      test(`persisted flow deletion ${action} offset=${offset} completed=${completed}`, () => {
+        const s = fixture(),
+          a = insertion(s, offset);
+        let room = new Room(s),
+          record = room.snapshot();
+        const accept = (operation, expected = "accepted") => {
+          const receipt = room.accept(operation);
+          assert.equal(receipt.outcome, expected, JSON.stringify(receipt));
+          record = replay(record, { op: operation, receipt });
+          room = new Room(null, JSON.parse(JSON.stringify(room.record)));
+          assert.deepEqual(room.accept(operation), receipt);
+          assert.deepEqual(room.record, record);
+          validate(room.record.state);
+        };
+        accept(a);
+        const complete = (seq, generation) =>
+          op("host", seq, {
+            kind: "imageComplete",
+            image: a.id + ":image",
+            generation,
+            asset: "a".repeat(64),
+            mime: "image/png",
+            bytes: 160,
+            width: 160,
+            height: 64,
+          });
+        if (completed) accept(complete(1, a.id));
+        const n = room.record.state,
+          range = captureCellRange(n, "table", "cell"),
+          d = op("B", 1),
+          planned =
+            action === "clear"
+              ? planClearCells(n, range, d)
+              : planTableDelete(n, range, d, {
+                  preview: previewTableDelete(n, range, action),
+                });
+        accept({ ...d, intent: planned.intent });
+        assert.equal(room.record.state.nodes[a.id + ":image"].live, false);
+        if (!completed) accept(complete(1, a.id), "rejected");
+        accept(op("B", 2, { kind: "undo", target: d.id }));
+        assert.deepEqual(projection(room.record.state), projection(n));
+        if (!completed) {
+          accept(complete(2, a.id), "rejected");
+          accept(complete(3, "B:s:2"));
+        }
+        assert.equal(
+          room.record.state.nodes[a.id + ":image"].asset,
+          "a".repeat(64),
+        );
+        if (completed) {
+          accept(op("B", 3, { kind: "undo", target: "B:s:2" }));
+          accept(op("B", 4, { kind: "undo", target: "B:s:3" }));
+        } else {
+          // Existing destructive-Undo policy protects content that completed
+          // after the saved witness. A fresh reviewed deletion may remove it.
+          accept(op("B", 3, { kind: "undo", target: "B:s:2" }), "rejected");
+          const current = room.record.state,
+            freshRange = captureCellRange(current, "table", "cell"),
+            fresh = op("B", 4);
+          const reviewed =
+            action === "clear"
+              ? planClearCells(current, freshRange, fresh)
+              : planTableDelete(current, freshRange, fresh, {
+                  preview: previewTableDelete(current, freshRange, action),
+                });
+          accept({ ...fresh, intent: reviewed.intent });
+          accept(op("B", 5, { kind: "undo", target: fresh.id }));
+          assert.equal(
+            room.record.state.nodes[a.id + ":image"].asset,
+            "a".repeat(64),
+          );
+        }
+        accept(op("A", 2, { kind: "undo", target: a.id }));
+        assert.deepEqual(projection(room.record.state), projection(s));
+      });
+test("clearing one cell keeps another cell image flow live and unchanged", () => {
+  const base = fixture(),
+    nodes = structuredClone(base.nodes),
+    content = {};
+  for (const n of Object.values(base.nodes))
+    if (n.type === "paragraph") content[n.id] = [{ text: words(base, n.id) }];
+  nodes.row.children.push("other-cell");
+  nodes["other-cell"] = {
+    id: "other-cell",
+    type: "cell",
+    live: true,
+    children: ["other-list"],
+  };
+  nodes["other-list"] = {
+    id: "other-list",
+    type: "ordered_list",
+    live: true,
+    children: ["other-item"],
+  };
+  nodes["other-item"] = {
+    id: "other-item",
+    type: "list_item",
+    live: true,
+    children: ["other-text"],
+  };
+  nodes["other-text"] = { id: "other-text", type: "paragraph", live: true };
+  content["other-text"] = [{ text: "Other sample" }];
+  const s = seed(nodes, content);
+  let n = apply(s, insertion(s, 10));
+  const c = op("C", 1),
+    range = captureRange(
+      n,
+      { block: "other-text", offset: 5 },
+      { block: "other-text", offset: 5 },
+    );
+  n = apply(n, {
+    ...c,
+    intent: planInsertBlock(n, range, c, {
+      type: "image",
+      slot: "second-cell-image-0001",
+      width: 80,
+      height: 40,
+    }).intent,
+  });
+  const other = n.nodes["other-cell"].children.slice(),
+    d = op("B", 1),
+    cells = captureCellRange(n, "table", "cell");
+  n = apply(n, { ...d, intent: planClearCells(n, cells, d).intent });
+  validate(n);
+  assert.equal(n.nodes["A:s:1:image"].live, false);
+  assert.equal(n.nodes["C:s:1:image"].live, true);
+  assert.deepEqual(n.nodes["other-cell"].children, other);
+  assert.equal(n.pendingMedia["C:s:1:image"].generation, c.id);
+  n = undo(n, "B", 2, d.id);
+  validate(n);
+  assert.deepEqual(n.nodes["other-cell"].children, other);
+});

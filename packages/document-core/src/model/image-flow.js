@@ -189,6 +189,16 @@ export function projectImageFlow(state, host) {
   for (const listId of new Set(records.map((r) => r.baseList))) {
     const list = state.nodes[listId],
       scope = list && treeParent(state, listId);
+    // A deleted container retains its flow ownership for Undo, but has no
+    // visible projection. Never recreate content while its retirement is live.
+    if (
+      !list?.live &&
+      (list?.clearedBy || list?.structureDeletedBy) &&
+      records
+        .filter((r) => r.baseList === listId)
+        .every((r) => !state.nodes[r.image]?.live)
+    )
+      continue;
     if (!list?.live || !["doc", "cell"].includes(scope?.type))
       throw host.fail("Image flow list scope changed");
     const localImages = new Set(
@@ -261,6 +271,7 @@ export function projectImageFlow(state, host) {
     });
   }
   for (const original of Object.values(state.listFamilies)) {
+    if (original.layout.blocks.every((id) => !state.nodes[id]?.live)) continue;
     if (
       !original.layout.blocks.some(
         (id) =>
