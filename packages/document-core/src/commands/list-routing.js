@@ -16,6 +16,7 @@ import { planProseJoin } from "./prose-join.js";
 import { publicPlan, planReplace } from "./replace.js";
 import { plainFragment } from "../fragment.js";
 import { insertionMarks } from "../selection/range.js";
+import { paragraphForEnter } from "../model/list-boundary.js";
 export { planListIndent };
 export const planCodeIndent = (...args) => publicPlan(codeIndent(...args));
 function context(state, range) {
@@ -42,10 +43,7 @@ export function planEnter(state, range, op, options = {}) {
   ) {
     const intent = { kind: "proseEnter", at: range.start },
       next = apply(state, { ...op, intent });
-    const tail =
-      next.nodes[`${op.id}:list-tail`]?.imageFlowKind === "paragraph"
-        ? `${op.id}:list-tail`
-        : `${op.id}:paragraph`;
+    const tail = paragraphForEnter(next, op.id);
     return { intent, state: next, after: gapAt(next, tail, 0) };
   }
   if (

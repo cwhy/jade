@@ -4,7 +4,6 @@
 import { treeParent } from "./tree.js";
 import { itemMarker, listMarkers } from "./list-marker.js";
 import { validateMedia, createMediaImage } from "./media.js";
-import { deriveFlowRegions } from "./flow-placement.js";
 
 // Visible text insertion changes replicas and retained boundary positions, not
 // the list topology cached by this projection. Joins and creation revival have
@@ -269,43 +268,10 @@ export function projectImageFlow(state, host) {
         .flatMap((id) => (id === listId ? output : [id])),
     });
   }
-  for (const original of Object.values(state.listFamilies)) {
-    if (original.layout.blocks.every((id) => !state.nodes[id]?.live)) continue;
-    if (
-      !original.layout.blocks.some(
-        (id) =>
-          Object.hasOwn(cache.nodes, treeParent(state, id)?.id) ||
-          records.some((r) => r.source === id || r.family === original.id),
-      )
-    )
-      continue;
-    cache.families[original.id] = original;
-    const f = structuredClone(original);
-    if (f.kind !== "flow") {
-      if (f.kind === "prose")
-        throw host.fail("Unsupported canonical prose image flow");
-      f.homePins = [
-        {
-          item: f.homeItem,
-          before: f.order.slice(0, f.order.indexOf("home")),
-          after: f.order.slice(f.order.indexOf("home") + 1),
-          wrappers: Object.fromEntries(
-            Object.values(f.cuts).map((c) => [c.id, c.wrapper]),
-          ),
-        },
-      ];
-      f.order = ["home", ...f.order.filter((id) => id !== "home")];
-      f.layout = { blocks: f.layout.blocks, home: 0 };
-      f.parent =
-        records.find((r) => r.baseList === original.list)?.scope ??
-        original.parent;
-    }
-    deriveFlowRegions(state, f, {
-      parent: (id) => treeParent(state, id),
-      fail: host.fail,
-    });
-    host.write("listFamilies")[f.id] = f;
-  }
+  // Image projection changes visible wrappers, not canonical boundary families.
+  // All structural commands suspend this view before using those families.
+  // Keeping their logical cuts intact also permits joins to retire a visible
+  // paragraph without asking flow derivation to treat it as a live region.
   state.imageFlowProjection = cache;
 }
 

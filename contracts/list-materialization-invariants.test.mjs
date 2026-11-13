@@ -221,3 +221,85 @@ test("older snapshots cannot be accepted as the current codec", () => {
     /Incompatible storage codec/,
   );
 });
+
+// A logical start marker inside a joined view must follow edits before it.
+// Unjoining can look correct while a later cut toggle reveals a stale marker.
+import { planEnter, planDelete } from "@cwhy/jade-core/commands";
+for (const grammar of ["list", "prose"])
+  for (const offset of [0, 1, 2])
+    for (const peerFirst of [false, true])
+      test(`logical start follows joined typing grammar=${grammar} offset=${offset} peerFirst=${peerFirst}`, () => {
+        const initial =
+          grammar === "list"
+            ? listFixture({ cell: true })
+            : seed(
+                {
+                  doc: { id: "doc", type: "doc", children: ["ap"], live: true },
+                  ap: { id: "ap", type: "paragraph", live: true },
+                },
+                { ap: [{ text: "aaaa" }] },
+              );
+        const original = text(initial, "ap"),
+          suffix = grammar === "list" ? "list-tail" : "paragraph";
+        const range = (s, block, offset) =>
+          captureRange(s, { block, offset }, { block, offset });
+        let s = run(
+          initial,
+          "cut-one",
+          planEnter(initial, range(initial, "ap", 1), {
+            id: "cut-one",
+            actor: "A",
+            epoch: 1,
+          }).intent,
+        );
+        const middle = `cut-one:${suffix}`,
+          last = `cut-two:${suffix}`;
+        s = run(
+          s,
+          "cut-two",
+          planEnter(s, range(s, middle, 2), {
+            id: "cut-two",
+            actor: "A",
+            epoch: 1,
+          }).intent,
+        );
+        const peer = {
+            kind: "insert",
+            at: gapAt(s, middle, offset),
+            text: "友",
+            marks: ["strong"],
+          },
+          joined = planDelete(s, range(s, middle, 2), "forward", {
+            id: "join",
+            actor: "A",
+            epoch: 1,
+          }).intent;
+        if (peerFirst) s = run(s, "peer", peer, "B");
+        s = run(s, "join", joined);
+        if (!peerFirst) s = run(s, "peer", peer, "B");
+        s = undo(reload(s), "unjoin", "join");
+        const added = { id: "peer:char:0", char: "友", marks: ["strong"] },
+          expected = [
+            ...original.slice(1, 1 + offset),
+            added,
+            ...original.slice(1 + offset, 3),
+          ];
+        assert.deepEqual(text(s, middle), expected);
+        assert.deepEqual(text(s, last), original.slice(3));
+        s = undo(s, "uncut-one", "cut-one");
+        for (let cycle = 0; cycle < 3; cycle++) {
+          assert.deepEqual(text(s, "ap"), [original[0], ...expected]);
+          assert.deepEqual(text(s, last), original.slice(3));
+          s = undo(
+            reload(s),
+            `redo-one:${cycle}`,
+            cycle ? `undo-one:${cycle - 1}` : "uncut-one",
+          );
+          assert.deepEqual(text(s, middle), expected);
+          s = undo(s, `undo-one:${cycle}`, `redo-one:${cycle}`);
+        }
+        s = undo(s, "uncut-two", "cut-two");
+        s = undo(s, "unpeer", "peer", "B");
+        assert.deepEqual(text(s, "ap"), original);
+        validate(s);
+      });

@@ -3,6 +3,7 @@ import { locations } from "./locations.js";
 import { validateFragment } from "../fragment.js";
 import { treeParent } from "./tree.js";
 import { joinTarget } from "./join-ledger.js";
+import { paragraphForEnter } from "./list-boundary.js";
 // A semantic edit owns selected character/boundary identities. It never takes
 // client-authored repartition steps or future character identities.
 export function validateProseReplace(state, intent, { resolve, fail }) {
@@ -97,7 +98,10 @@ export function executeProseReplace(state, intent, action, host) {
         { kind: "proseEnter", at: host.gap(at.block, at.offset) },
         `${action}:split:${i}`,
       );
-      at = { block: `${action}:split:${i}:paragraph`, offset: 0 };
+      at = {
+        block: paragraphForEnter(state, `${action}:split:${i}`),
+        offset: 0,
+      };
     }
     const runs = block.content.filter((run) => run.text.length);
     if (runs.length) {

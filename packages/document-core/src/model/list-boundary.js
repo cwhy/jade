@@ -4,6 +4,17 @@ import {
   creationProseParent,
 } from "./creation-extent.js";
 import { creationGapAfterStart } from "./creation-lifecycle.js";
+
+// The logical cut owns the new paragraph identity. Visible prose may use a
+// retained list partition, so callers must not infer its ID from UI grammar.
+export function paragraphForEnter(state, action) {
+  for (const family of Object.values(state.listFamilies)) {
+    const cut = family.cuts[`${action}:cut`];
+    if (cut) return cut.block;
+  }
+  throw Error("Enter has no retained paragraph boundary");
+}
+
 // Creator activity and structural retention are separate contributions.
 export function executeListBoundary(state, intent, action, host) {
   if (intent.kind !== "listBoundaryActive")

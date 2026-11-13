@@ -16,7 +16,8 @@ and preservation of a plain paragraph authored after insertion.
   numbered Enter and an online plain Enter are deliberately different inputs.
 - Before relevant mutations, restore the cached canonical topology. Apply the
   semantic edit there, then project images, plain suffixes and ordered runs.
-  Projection caches store node/family topology, not duplicate character arrays.
+  Projection caches store node topology, not duplicate character arrays. Logical
+  boundary families remain canonical beneath that visible layout.
 - Validate persisted ownership and reconstruct the projection to verify it
   matches the published view. Raw activity commands remain private to Undo.
 - Ordinary insertions outside projected lists and paragraph families reuse the
@@ -55,15 +56,16 @@ compatibility decision and tested migration before integration. A different
 semantic intent alone is not sufficient storage fencing.
 
 The proved shape is a leaf numbered paragraph in a document or cell. Nested or
-attachment-bearing destinations, cell/row/table deletion and restoration with
-these flows, joins and multi-paragraph replacement, image moves/resizing,
+attachment-bearing destinations, wider deletion/restoration schedules,
+transitions across image boundaries and multi-paragraph replacement, image moves/resizing,
 formatting, explicit numbering changes and clipboard operations against
 projected wrappers need interaction-specific qualification. Existing contract
 passes do not imply those combinations were exercised with the new flow active.
 Synthetic projected wrapper IDs must not become unvalidated mutation targets.
 
-Next, qualify the flow alongside structural deletion/recovery and long-document
-editing inside its list, add compatibility gates, then test the app's caret,
+Bounded container deletion, inside-list typing and plain-suffix joins now have
+model evidence in the follow-ups below. Next qualify replacement and other
+projected-wrapper commands, add compatibility gates, then test the app's caret,
 picker/paste, rendering, and uploads using the packaged candidate. No application
 dependency, deployed service, public release or native-input behavior changed
 in this proof.
@@ -103,12 +105,64 @@ prefix/same-list typing medians near 0.7 ms after reuse, versus approximately
 10.2 ms before. These are illustrative model-only measurements, not rendered
 application or release performance qualification.
 
-Two new join expectations remain unqualified and are preserved separately in
+At that checkpoint, two join expectations were unqualified and preserved in
 parent research `image-flow-editing-2026-11-13/join-gate.test.mjs`. Backspace and
-forward Delete between two plain suffix paragraphs currently reject with a
+forward Delete between two plain suffix paragraphs rejected with a
 prose-context mismatch. Translating the command to a canonical list join alone
 is insufficient: join projection retires a paragraph still referenced by image
 flow's layout derivation. That attempted adapter was removed. The next change
 must define composition/order of join and image projections rather than weaken
-boundary validation. These two failures are excluded from the passing release
-inventory and explicitly remain an integration gate.
+boundary validation. Those failures were excluded from that passing inventory. The following
+checkpoint includes both unchanged expectations and passes them.
+
+
+## November 13: plain-suffix joins and logical start tracking
+
+Image layout now leaves canonical paragraph-boundary families untouched. A
+visible plain-suffix join uses its retained canonical list cut after suspending
+image layout; the ordinary join ledger owns the contribution. Join projection
+runs before image layout. The view no longer derives a second family layout
+from a paragraph that a join has retired.
+
+The two preserved Backspace/Delete expectations now pass unchanged. Eight new
+schedules cover both directions, both peer-typing arrival orders, both image/join
+Undo orders, repeated Undo/Redo, marked peer text, original atom anchors, JSON
+room reload, exact duplicate decisions and client replay after every event.
+The image-placement family now contains 200 passing cases.
+
+These schedules exposed a shared bug: a logical paragraph-start marker can sit
+inside a joined visible paragraph. It must move when typing occurs before it;
+only insertion exactly at the start retains its right-side affinity. Previously
+all start markers stayed fixed. Unjoining could look correct until another
+boundary toggle repartitioned the text using the stale marker. Twelve image-free
+list/prose cases check exact atoms and marks at start/interior/end positions,
+both arrival orders and repeated cut toggles. Four fail under the old rule and
+all pass under the corrected invariant.
+
+Installed-package verification: 31 internal + 3,315 contracts across 82 roots
+(artifact `verify-hJwMbL`). This is model/package evidence, not browser/native or
+production qualification. The image-layout proof still requires version fences
+and interaction-specific qualification before application integration. Parent
+research `image-flow-joins-2026-11-13` preserves the control and passing logs.
+
+
+## November 13: replacement across plain suffix paragraphs
+
+Four basic replacement cases cover deletion, one-line replacement, multiline
+replacement and a blank line, including the resulting caret and exact restored
+atoms. Multiline replacement exposed a guessed paragraph ID: visible prose
+can retain a list partition underneath. `paragraphForEnter` now reads the new
+paragraph identity from the logical cut. Enter, replacement execution and caret
+planning share that source of truth without image-specific naming guesses.
+
+Twenty-four more schedules combine replacements with offline marked text in
+either removed paragraph, both arrival orders, both image/replacement Undo
+orders, repeated Redo, exact duplicate decisions, JSON room reload and client
+replay after every event. Undo restores the peer's text to its original paragraph
+and position. The image contract family now has 228 cases. Final packaged
+verification passes 31 internal + 3,343 contracts across 82 roots. Counts include
+prior coverage; they are not additive release-completion metrics.
+
+This qualifies adjacent plain suffix paragraphs only. Crossing an intervening
+image, arbitrary projected-wrapper operations, codec/wire fencing and app/UI
+integration remain open. No public release or deployment occurs in this proof.

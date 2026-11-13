@@ -743,6 +743,20 @@ function formatActive(state, intent) {
 function execute(state, intent, action, materialization = null) {
   const imageHost={execute:(i,id)=>execute(state,i,id,materialization),write:f=>writable(state,f),resolveState:resolveGap,gapState:gapAt,fail:m=>new Conflict(m)};
   if(['imageListPlace','imageFlowActive'].includes(intent.kind))return executeImageFlow(state,intent,action,imageHost);
+  // A plain suffix uses the retained canonical list cut beneath image layout.
+  // Its visible command remains proseJoin; the ledger owns that same cut.
+  if (
+    intent.kind === "proseJoin" &&
+    state.nodes[intent.target.right]?.imageFlowKind === "paragraph"
+  ) {
+    const item = parent(state, intent.target.right),
+      list = item && parent(state, item.id);
+    if (
+      item?.type === "list_item" &&
+      Object.values(state.imageFlows || {}).some((r) => r.baseList === list?.id)
+    )
+      return execute(state, { ...intent, kind: "listJoin" }, action, materialization);
+  }
   if(intent.kind==='proseEnter' && Object.keys(state.imageFlows||{}).length) {
     const point=resolveGap(state,intent.at),item=parent(state,point.block),list=item&&parent(state,item.id);
     if(item?.type==='list_item' && Object.values(state.imageFlows).some(r=>r.baseList===list?.id)) {

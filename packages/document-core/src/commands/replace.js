@@ -13,6 +13,7 @@ import {
 import { apply, gapAt, resolveGap, findCharacter } from "../model/engine.js";
 import { treeParent } from "../model/tree.js";
 import { joinTarget } from "../model/join-ledger.js";
+import { paragraphForEnter } from "../model/list-boundary.js";
 import { validateFragment, plainText } from "../fragment.js";
 export function planReplace(state, range, fragment, op, options = {}) {
   fragment = validateFragment(fragment);
@@ -91,7 +92,10 @@ export function planReplace(state, range, fragment, op, options = {}) {
     const point = found
       ? { block: found.block, offset: found.offset + 1 }
       : last
-        ? { block: `${op.id}:split:${last}:paragraph`, offset: 0 }
+        ? {
+            block: paragraphForEnter(next, `${op.id}:split:${last}`),
+            offset: 0,
+          }
         : resolveGap(next, range.start);
     return {
       intent,

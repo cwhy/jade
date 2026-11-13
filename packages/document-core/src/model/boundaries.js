@@ -109,7 +109,10 @@ export function insertAtBoundaries(
     if (
       cut.block === block &&
       cut.offset >= at &&
-      cut.edge !== "start" &&
+      // A logical paragraph start can sit inside a joined paragraph. Typing
+      // before it must move the marker; only typing exactly at that start
+      // stays on its right. Otherwise expanding the join restores a stale cut.
+      (cut.edge !== "start" || cut.offset > at) &&
       !(cut.offset === at && earlier.has(cut.ordinal)) &&
       !(cut.offset === at && gap?.listAffinity?.[id] === "right")
     )

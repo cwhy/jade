@@ -8,6 +8,7 @@ import {
   seed,
   text,
   gapAt,
+  resolveGap,
   anchorAt,
   resolveAnchor,
 } from "@cwhy/jade-core/model";
@@ -636,3 +637,280 @@ for (const where of ["target", "A:s:1:cut:list-tail", "after"])
     );
     assert.deepEqual(projection(fresh.record.state), projection(before));
   });
+
+for (const direction of ["backward", "forward"])
+  test(`plain suffix Enter and ${direction} join preserve image flow`, () => {
+    const s = fixture();
+    let n = apply(s, insertion(s, 10));
+    const suffix = "A:s:1:cut:list-tail";
+    n = apply(
+      n,
+      op(
+        "B",
+        1,
+        planEnter(
+          n,
+          captureRange(
+            n,
+            { block: suffix, offset: 3 },
+            { block: suffix, offset: 3 },
+          ),
+          op("B", 1),
+        ).intent,
+      ),
+    );
+    const before = n,
+      tail = "B:s:1:list-tail",
+      block = direction === "backward" ? tail : suffix,
+      offset = direction === "backward" ? 0 : 3;
+    const p = planDelete(
+      n,
+      captureRange(n, { block, offset }, { block, offset }),
+      direction,
+      op("B", 2),
+    );
+    assert.ok(p.intent);
+    n = apply(n, op("B", 2, p.intent));
+    validate(n);
+    assert.equal(words(n, suffix), "settings");
+    assert.equal(n.nodes["A:s:1:image"].live, true);
+    n = undo(n, "B", 3, "B:s:2");
+    assert.deepEqual(projection(n), projection(before));
+    validate(n);
+  });
+for (const direction of ["backward", "forward"])
+  for (const imageFirst of [false, true])
+    for (const typingFirst of [false, true])
+      test(`join/image independent restoration ${direction} imageFirst=${imageFirst} typingFirst=${typingFirst}`, () => {
+        const s = fixture(),
+          anchor = anchorAt(s, "target", 0, 18);
+        let room = new Room(s),
+          record = room.snapshot();
+        const accept = (operation) => {
+          const receipt = room.accept(operation);
+          assert.equal(receipt.outcome, "accepted", JSON.stringify(receipt));
+          record = replay(record, { op: operation, receipt });
+          room = new Room(null, JSON.parse(JSON.stringify(room.record)));
+          assert.deepEqual(room.accept(operation), receipt);
+          assert.deepEqual(room.record, record);
+          validate(record.state);
+        };
+        accept(insertion(s, 10));
+        const suffix = "A:s:1:cut:list-tail";
+        let n = room.record.state;
+        accept(
+          op(
+            "B",
+            1,
+            planEnter(
+              n,
+              captureRange(
+                n,
+                { block: suffix, offset: 3 },
+                { block: suffix, offset: 3 },
+              ),
+              op("B", 1),
+            ).intent,
+          ),
+        );
+        n = room.record.state;
+        const peer = op("C", 1, {
+            kind: "insert",
+            at: gapAt(n, suffix, 2),
+            text: "友",
+            marks: ["strong"],
+          }),
+          block = direction === "backward" ? "B:s:1:list-tail" : suffix,
+          offset = direction === "backward" ? 0 : 3,
+          join = op(
+            "B",
+            2,
+            planDelete(
+              n,
+              captureRange(n, { block, offset }, { block, offset }),
+              direction,
+              op("B", 2),
+            ).intent,
+          );
+        for (const action of typingFirst ? [peer, join] : [join, peer])
+          accept(action);
+        const uImage = op("A", 2, { kind: "undo", target: "A:s:1" }),
+          uJoin = op("B", 3, { kind: "undo", target: "B:s:2" });
+        for (const action of imageFirst ? [uImage, uJoin] : [uJoin, uImage])
+          accept(action);
+        assert.deepEqual(projection(room.record.state), [
+          first,
+          { kind: "ordered", number: 2, text: "Workspace se友t" },
+          { kind: "paragraph", text: "tings" },
+          last,
+        ]);
+        accept(op("A", 3, { kind: "undo", target: "A:s:2" }));
+        accept(op("B", 4, { kind: "undo", target: "B:s:3" }));
+        accept(op("B", 5, { kind: "undo", target: "B:s:4" }));
+        accept(op("A", 4, { kind: "undo", target: "A:s:3" }));
+        accept(op("B", 6, { kind: "undo", target: "B:s:1" }));
+        assert.equal(
+          words(room.record.state, "target"),
+          "Workspace se友ttings",
+        );
+        assert.deepEqual(
+          resolveAnchor(room.record.state, anchor)
+            .segments.filter((x) => anchor.atoms.includes(x.id))
+            .map((x) => x.id),
+          anchor.atoms,
+        );
+        accept(op("C", 2, { kind: "undo", target: "C:s:1" }));
+        assert.deepEqual(text(room.record.state, "target"), text(s, "target"));
+      });
+
+import { planReplace } from "@cwhy/jade-core/commands";
+import { plainFragment } from "@cwhy/jade-core/fragment";
+for (const replacement of ["", "X", "X\nY", "\n"])
+  test(`replace across plain image suffix ${JSON.stringify(replacement)}`, () => {
+    let s = apply(fixture(), insertion(fixture(), 10));
+    const suffix = "A:s:1:cut:list-tail";
+    s = apply(
+      s,
+      op(
+        "B",
+        1,
+        planEnter(
+          s,
+          captureRange(
+            s,
+            { block: suffix, offset: 3 },
+            { block: suffix, offset: 3 },
+          ),
+          op("B", 1),
+        ).intent,
+      ),
+    );
+    const initial = s,
+      tail = "B:s:1:list-tail";
+    const plan = planReplace(
+      s,
+      captureRange(s, { block: suffix, offset: 1 }, { block: tail, offset: 2 }),
+      plainFragment(replacement),
+      op("C", 1),
+      { strict: true },
+    );
+    s = apply(s, op("C", 1, plan.intent));
+    const caret = resolveGap(s, plan.after),
+      lines = replacement.split("\n");
+    assert.equal(
+      caret.offset,
+      lines.at(-1).length + (lines.length === 1 ? 1 : 0),
+    );
+    assert.equal(
+      words(s, caret.block),
+      (lines.length === 1 ? "s" : "") + lines.at(-1) + "ngs",
+    );
+    assert.deepEqual(projection(s), [
+      first,
+      { kind: "ordered", number: 2, text: "Workspace " },
+      image,
+      ...("s" + replacement + "ngs")
+        .split("\n")
+        .map((text) => ({ kind: "paragraph", text })),
+      last,
+    ]);
+    s = undo(s, "C", 2, "C:s:1");
+    assert.deepEqual(projection(s), projection(initial));
+    assert.deepEqual(text(s, suffix), text(initial, suffix));
+    assert.deepEqual(text(s, tail), text(initial, tail));
+    validate(s);
+  });
+
+for (const replacement of ["X", "X\nY", "\n"])
+  for (const peerRight of [false, true])
+    for (const peerFirst of [false, true])
+      for (const imageFirst of [false, true])
+        test(`suffix replacement preserves offline text replacement=${JSON.stringify(replacement)} right=${peerRight} peerFirst=${peerFirst} imageFirst=${imageFirst}`, () => {
+          const initial = fixture(),
+            original = text(initial, "target");
+          let room = new Room(initial),
+            record = room.snapshot();
+          const accept = (operation) => {
+            const receipt = room.accept(operation);
+            assert.equal(receipt.outcome, "accepted", JSON.stringify(receipt));
+            record = replay(record, { op: operation, receipt });
+            room = new Room(null, JSON.parse(JSON.stringify(room.record)));
+            assert.deepEqual(room.accept(operation), receipt);
+            assert.deepEqual(room.record, record);
+            validate(record.state);
+          };
+          accept(insertion(initial, 10));
+          const left = "A:s:1:cut:list-tail",
+            right = "B:s:1:list-tail";
+          let s = room.record.state;
+          accept(
+            op(
+              "B",
+              1,
+              planEnter(
+                s,
+                captureRange(
+                  s,
+                  { block: left, offset: 3 },
+                  { block: left, offset: 3 },
+                ),
+                op("B", 1),
+              ).intent,
+            ),
+          );
+          s = room.record.state;
+          const replace = op(
+              "C",
+              1,
+              planReplace(
+                s,
+                captureRange(
+                  s,
+                  { block: left, offset: 1 },
+                  { block: right, offset: 2 },
+                ),
+                plainFragment(replacement),
+                op("C", 1),
+                { strict: true },
+              ).intent,
+            ),
+            peer = op("D", 1, {
+              kind: "insert",
+              at: gapAt(s, peerRight ? right : left, peerRight ? 1 : 2),
+              text: "友",
+              marks: ["strong"],
+            });
+          for (const operation of peerFirst ? [peer, replace] : [replace, peer])
+            accept(operation);
+          const uImage = op("A", 2, { kind: "undo", target: "A:s:1" }),
+            uReplace = op("C", 2, { kind: "undo", target: "C:s:1" });
+          for (const operation of imageFirst
+            ? [uImage, uReplace]
+            : [uReplace, uImage])
+            accept(operation);
+          const expected = [
+            first,
+            {
+              kind: "ordered",
+              number: 2,
+              text: peerRight ? "Workspace set" : "Workspace se友t",
+            },
+            { kind: "paragraph", text: peerRight ? "t友ings" : "tings" },
+            last,
+          ];
+          assert.deepEqual(projection(room.record.state), expected);
+          accept(op("A", 3, { kind: "undo", target: "A:s:2" }));
+          accept(op("C", 3, { kind: "undo", target: "C:s:2" }));
+          accept(op("C", 4, { kind: "undo", target: "C:s:3" }));
+          accept(op("A", 4, { kind: "undo", target: "A:s:3" }));
+          assert.deepEqual(projection(room.record.state), expected);
+          accept(op("B", 2, { kind: "undo", target: "B:s:1" }));
+          const pos = peerRight ? 14 : 12;
+          assert.deepEqual(text(room.record.state, "target"), [
+            ...original.slice(0, pos),
+            { id: "D:s:1:char:0", char: "友", marks: ["strong"] },
+            ...original.slice(pos),
+          ]);
+          accept(op("D", 2, { kind: "undo", target: "D:s:1" }));
+          assert.deepEqual(text(room.record.state, "target"), original);
+        });
