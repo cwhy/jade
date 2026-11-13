@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+import { imageFlowTarget } from "../model/image-flow.js";
 import { treeParent } from "../model/tree.js";
 import { apply, gapAt, resolveGap } from "../model/engine.js";
 import { validateDestination, ReviewRequired } from "../selection/range.js";
@@ -23,6 +24,22 @@ export function planInsertBlock(
       placement =
         !range.collapsed ||
         point.offset !== state.replicas[state.nodes[point.block].text].length;
+    if (range.collapsed && imageFlowTarget(state, range.start, resolveGap)) {
+      const intent = {
+          kind: "imageListPlace",
+          at: range.start,
+          slot,
+          width,
+          height,
+        },
+        next = apply(state, { ...op, intent }),
+        tail = op.id + ":cut:list-tail";
+      return {
+        intent,
+        state: next,
+        after: next.nodes[tail]?.live ? gapAt(next, tail, 0) : range.start,
+      };
+    }
     if (placement && !["doc", "cell"].includes(parent?.type))
       throw new ReviewRequired(
         "Image insertion inside a list item currently requires a paragraph-end caret",

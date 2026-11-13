@@ -5,6 +5,7 @@ import { isImmutable } from "./immutable.js";
 const drafts = new WeakMap();
 const fields = new Set([
   "pendingMedia",
+  "imageFlows",
   "textClaims",
   "textMasks",
   "creationPlacements",
@@ -30,6 +31,7 @@ export function stage(state) {
   // original eager shallow-copy behavior until the host seals it.
   if (!isImmutable(state))
     for (const field of fields) {
+      if (field === "imageFlows" && state[field] === undefined) continue;
       next[field] = Array.isArray(state[field])
         ? [...state[field]]
         : { ...state[field] };

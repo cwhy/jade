@@ -42,7 +42,11 @@ export function planEnter(state, range, op, options = {}) {
   ) {
     const intent = { kind: "proseEnter", at: range.start },
       next = apply(state, { ...op, intent });
-    return { intent, state: next, after: gapAt(next, `${op.id}:paragraph`, 0) };
+    const tail =
+      next.nodes[`${op.id}:list-tail`]?.imageFlowKind === "paragraph"
+        ? `${op.id}:list-tail`
+        : `${op.id}:paragraph`;
+    return { intent, state: next, after: gapAt(next, tail, 0) };
   }
   if (
     !options.soft &&

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+import {validateImageFlow} from './image-flow.js';
 import {validateImageSize,validateImageSizes} from './image-size.js';
 import {validateMedia, validateMediaState} from './media.js';
 import {validateImagePlacement} from './image-placement.js';
@@ -203,6 +204,10 @@ export function validatePublicIntent(
     case 'imageResize':
       if(inBatch)fail('Image resizing must be a complete operation');
       validateImageSize(state,intent);return;
+    case 'imageListPlace':
+      if(inBatch)fail('Image flow must be a complete operation');
+      checkGap(state,intent.at);
+      validateImageFlow(state,intent,{resolveState:engine.resolveGap,gapState:engine.gapAt,fail:m=>new engine.Conflict(m)});return;
     case 'imagePlace':
       if(inBatch)fail('Media commands must be complete operations');
       checkGap(state,intent.at);

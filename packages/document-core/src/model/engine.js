@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+import {executeImageFlow,suspendImageFlow,projectImageFlow,validateImageFlowState,canReuseImageFlow} from './image-flow.js';
 import {executeImageSize,validateImageSize} from './image-size.js';
 import {executeMedia,fenceMedia} from './media.js';
 import {executeImagePlacement} from './image-placement.js';
@@ -740,6 +741,18 @@ function formatActive(state, intent) {
   return { ...intent, active: !intent.active };
 }
 function execute(state, intent, action, materialization = null) {
+  const imageHost={execute:(i,id)=>execute(state,i,id,materialization),write:f=>writable(state,f),resolveState:resolveGap,gapState:gapAt,fail:m=>new Conflict(m)};
+  if(['imageListPlace','imageFlowActive'].includes(intent.kind))return executeImageFlow(state,intent,action,imageHost);
+  if(intent.kind==='proseEnter' && Object.keys(state.imageFlows||{}).length) {
+    const point=resolveGap(state,intent.at),item=parent(state,point.block),list=item&&parent(state,item.id);
+    if(item?.type==='list_item' && Object.values(state.imageFlows).some(r=>r.baseList===list?.id)) {
+      const inverse=execute(state,{kind:'listEnter',at:intent.at,marker:'ordered_list'},action,materialization);
+      const tail=action+':list-tail';
+      writable(state,'nodes')[tail]={...state.nodes[tail],imageFlowKind:'paragraph'};
+      return inverse;
+    }
+  }
+
   const creationHost = {
     action,
     execute: (i, id) => execute(state, i, id, materialization),
@@ -1099,6 +1112,8 @@ export function apply(state, op, validateFinalShape = null) {
     });
   if(op.intent.kind === "imageResize") validateImageSize(state,op.intent);
   const next = stage(state);
+  const reuseImageFlow = canReuseImageFlow(state, op.intent, resolveGap);
+  if (!reuseImageFlow) suspendImageFlow(next,field=>writable(next,field));
   let intent = op.intent;
   if (intent.kind === "undo") {
     const ids = intent.targets || [intent.target];
@@ -1144,6 +1159,7 @@ export function apply(state, op, validateFinalShape = null) {
     );
   projectCreations(next, projectionHost);
   if (rebuildProjection) projectJoins(next, op.id, projectionHost);
+  if (!reuseImageFlow) projectImageFlow(next,{write:field=>writable(next,field),resolveState:resolveGap,fail:m=>new Conflict(m)});
   fenceMedia(state,next,op.id,field=>writable(next,field));
   writable(next, "effects")[op.id] = {
     actor: op.actor,
@@ -1169,6 +1185,7 @@ export function apply(state, op, validateFinalShape = null) {
 }
 const checkedRuns = new WeakSet();
 export function validate(state, incremental = false) {
+  validateImageFlowState(state,{resolveState:resolveGap,fail:m=>new Conflict(m)});
   validateTextClaims(state);
   validateCreations(state);
   validateCreationPlacements(state);

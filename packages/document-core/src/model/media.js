@@ -85,31 +85,9 @@ export function executeMedia(state, intent, action, host) {
     const { point, parent } = validateMedia(state, intent, host),
       id = action + ":image";
     if (state.nodes[id]) throw fail("Image identity reused");
-    const n = {
-      id,
-      type: "image",
-      live: true,
-      mediaSlot: intent.slot,
-      createdBy: action,
-      imageOwner: action,
-      width: intent.width,
-      height: intent.height,
-      alt: "",
-    };
-    write("nodes")[id] = n;
-    write("pendingMedia")[id] = { generation: action };
-    const children = [...parent.children];
-    children.splice(children.indexOf(point.block) + 1, 0, id);
-    write("nodes")[parent.id] = { ...parent, children };
-    return {
-      kind: "imagePresence",
-      image: id,
-      parent: parent.id,
-      after: point.block,
-      active: false,
-      expected: action,
-    };
+    return createMediaImage(state, intent, action, parent, point.block, host);
   }
+
   if (intent.kind === "imageComplete") {
     const { node } = validateMedia(state, intent, host),
       n = {
@@ -161,7 +139,12 @@ export function executeMedia(state, intent, action, host) {
     throw fail("Image changed; cannot undo this action");
   if (!intent.active && treeParent(state, node.id)?.id !== parent.id)
     throw fail("Image moved; cannot undo this action");
-  if (intent.active && (intent.before ? !parent.children.includes(intent.before) : intent.after && !parent.children.includes(intent.after)))
+  if (
+    intent.active &&
+    (intent.before
+      ? !parent.children.includes(intent.before)
+      : intent.after && !parent.children.includes(intent.after))
+  )
     throw fail("Image insertion boundary was removed");
   const n = { ...node, live: intent.active, imageOwner: action };
   if (!intent.active) n.retiredBy = action;
@@ -170,7 +153,11 @@ export function executeMedia(state, intent, action, host) {
   const children = parent.children.filter((id) => id !== n.id);
   if (intent.active)
     children.splice(
-      intent.before ? children.indexOf(intent.before) : intent.after ? children.indexOf(intent.after) + 1 : 0,
+      intent.before
+        ? children.indexOf(intent.before)
+        : intent.after
+          ? children.indexOf(intent.after) + 1
+          : 0,
       0,
       n.id,
     );
@@ -234,4 +221,51 @@ export function validateMediaState(state, fail) {
     )
       fail("Invalid completed image asset");
   }
+}
+
+// Internal primitive: caller has validated its semantic placement and descriptor.
+export function createMediaImage(
+  state,
+  intent,
+  action,
+  parent,
+  after,
+  host,
+  before,
+) {
+  const { write, fail } = host,
+    id = action + ":image";
+  if (state.nodes[id]) throw fail("Image identity reused");
+  const n = {
+    id,
+    type: "image",
+    live: true,
+    mediaSlot: intent.slot,
+    createdBy: action,
+    imageOwner: action,
+    width: intent.width,
+    height: intent.height,
+    alt: "",
+  };
+  write("nodes")[id] = n;
+  write("pendingMedia")[id] = { generation: action };
+  const children = [...parent.children];
+  const index =
+    before !== undefined
+      ? before === null
+        ? children.length
+        : children.indexOf(before)
+      : children.indexOf(after) + 1;
+  if (index < 0) throw fail("Image boundary unavailable");
+  children.splice(index, 0, id);
+  write("nodes")[parent.id] = { ...parent, children };
+  return {
+    kind: "imagePresence",
+    image: id,
+    parent: parent.id,
+    after,
+    ...(before ? { before } : {}),
+    active: false,
+    expected: action,
+  };
 }

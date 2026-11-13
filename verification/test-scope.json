@@ -80,7 +80,8 @@
     "block-insertion.test.mjs",
     "media-lifecycle.test.mjs",
     "image-placement.test.mjs",
-    "image-size.test.mjs"
+    "image-size.test.mjs",
+    "image-list-placement.test.mjs"
   ],
   "included_files": [
     "attached-source-peer-gate.test.mjs",
