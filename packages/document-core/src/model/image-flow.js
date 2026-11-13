@@ -4,6 +4,7 @@
 import { treeParent } from "./tree.js";
 import { itemMarker, listMarkers } from "./list-marker.js";
 import { validateMedia, createMediaImage } from "./media.js";
+import { placeMaterializedImages } from "./image-flow-materialization.js";
 
 // Visible text insertion changes replicas and retained boundary positions, not
 // the list topology cached by this projection. Joins and creation revival have
@@ -183,9 +184,17 @@ export function executeImageFlow(state, intent, action, host) {
   return { kind: "imageFlowActive", flow: action, active: false };
 }
 
-export function projectImageFlow(state, host) {
-  const records = Object.values(state.imageFlows || {});
-  if (!records.length) return;
+export function projectImageFlow(state, host, onlyList = null) {
+  const all = Object.values(state.imageFlows || {}).filter(
+    (r) => onlyList === null || r.baseList === onlyList,
+  );
+  if (!all.length) return;
+  placeMaterializedImages(
+    state,
+    all.filter((r) => r.materialized),
+    host,
+  );
+  const records = all.filter((r) => !r.materialized);
   const cache = { nodes: {}, families: {} },
     write = (id, n) => {
       if (!Object.hasOwn(cache.nodes, id))
@@ -299,6 +308,10 @@ export function validateImageFlowState(state, host) {
       !r ||
       r.id !== id ||
       typeof r.active !== "boolean" ||
+      (r.materialized !== undefined && r.materialized !== true) ||
+      (r.materialized &&
+        r.cut &&
+        !["flow", "prose"].includes(state.listFamilies[r.family]?.kind)) ||
       !Number.isSafeInteger(r.acceptedAt) ||
       r.acceptedAt < 0 ||
       state.nodes[r.image]?.type !== "image" ||

@@ -186,6 +186,10 @@ export function executeFlowBoundary(state, intent, action, host, ordinary) {
         parent: hostNode.id,
         after: hostNode.children[at - 1] ?? null,
         before: hostNode.children[at + 1] ?? null,
+        neighbours: {
+          preceding: hostNode.children.slice(0, at),
+          following: hostNode.children.slice(at + 1),
+        },
         ...(ownedLeft
           ? {
               wrapper: structuredClone(leftOwner),
@@ -210,19 +214,56 @@ export function executeFlowBoundary(state, intent, action, host, ordinary) {
       }
       placementOverride = true;
     } else if (intent.active && cut.separatedPlacement) {
-      // Redo restores the exact prior placement, including an owned list wrapper.
-      // Stable neighbours prevent the restoration from overwriting later structure.
+      // Redo uses surviving neighbours from the prior placement. Retired peers
+      // may disappear through independent Undo; live moved peers are a conflict.
+      // A restored cut in the same text lineage can supply the left boundary.
       const place = cut.separatedPlacement,
         owner = node(place.parent),
-        at =
-          place.before === null
+        liveNeighbours = (ids) =>
+          ids.filter((id) => {
+            if (!state.nodes[id]?.live) return false;
+            if (parent(id)?.id !== owner.id)
+              throw fail("Separated paragraph neighbour moved");
+            return true;
+          }),
+        after = place.neighbours
+          ? (liveNeighbours(place.neighbours.preceding).at(-1) ?? null)
+          : place.after,
+        before = place.neighbours
+          ? (liveNeighbours(place.neighbours.following)[0] ?? null)
+          : place.before,
+        originalAt =
+          before === null
             ? owner.children.length
-            : owner.children.indexOf(place.before),
+            : owner.children.indexOf(before),
         wrapper = place.wrapper;
+      let at = originalAt,
+        lineagePlacement = false;
+      if (!wrapper && (at < 0 || (owner.children[at - 1] ?? null) !== after)) {
+        // A different cut in this same text lineage may have been restored
+        // first. Follow the retained marker's current paragraph, but only at
+        // the end of its scope child and before the surviving right witness.
+        // Foreign intervening structure still requires review.
+        const block = state.boundaries[cut.marker]?.block;
+        let root = state.nodes[block];
+        while (root && parent(root.id)?.id !== owner.id) root = parent(root.id);
+        let last = root;
+        while (last?.children?.length) last = state.nodes[last.children.at(-1)];
+        const candidate = root ? owner.children.indexOf(root.id) + 1 : -1;
+        if (
+          oldLayout.blocks.includes(block) &&
+          last?.id === block &&
+          candidate > 0 &&
+          (owner.children[candidate] ?? null) === before
+        ) {
+          at = candidate;
+          lineagePlacement = true;
+        }
+      }
       if (
         !(wrapper ? isList(owner) : ["doc", "cell"].includes(owner.type)) ||
         at < 0 ||
-        (owner.children[at - 1] ?? null) !== place.after
+        (!lineagePlacement && (owner.children[at - 1] ?? null) !== after)
       )
         throw fail(
           "Separated paragraph restoration acquired a structural dependency",

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 import {executeImageFlow,suspendImageFlow,projectImageFlow,validateImageFlowState,canReuseImageFlow,imageFlowPresenceBoundary} from './image-flow.js';
+import {materializeImageFlowForRichInsert} from './image-flow-materialization.js';
 import {executeImageSize,validateImageSize} from './image-size.js';
 import {executeMedia,fenceMedia} from './media.js';
 import {executeImagePlacement} from './image-placement.js';
@@ -1158,6 +1159,8 @@ export function apply(state, op, validateFinalShape = null) {
     creationRequiresJoinExpansion(next) ||
     !canReuseJoinProjection(next, intent, projectionHost);
   if (rebuildProjection) expandJoins(next, op.id, projectionHost);
+  const imageFlowHost={write:field=>writable(next,field),resolveState:resolveGap,fail:m=>new Conflict(m)};
+  materializeImageFlowForRichInsert(next,intent,{...imageFlowHost,projectList:list=>projectImageFlow(next,imageFlowHost,list)});
   const held =
     op.intent.kind !== "undo" &&
     beginCreationPlacement(next, intent, op.id, projectionHost);
@@ -1173,7 +1176,7 @@ export function apply(state, op, validateFinalShape = null) {
     );
   projectCreations(next, projectionHost);
   if (rebuildProjection) projectJoins(next, op.id, projectionHost);
-  if (!reuseImageFlow) projectImageFlow(next,{write:field=>writable(next,field),resolveState:resolveGap,fail:m=>new Conflict(m)});
+  if (!reuseImageFlow) projectImageFlow(next,imageFlowHost);
   fenceMedia(state,next,op.id,field=>writable(next,field));
   writable(next, "effects")[op.id] = {
     actor: op.actor,

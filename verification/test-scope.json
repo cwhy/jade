@@ -82,7 +82,8 @@
     "image-placement.test.mjs",
     "image-size.test.mjs",
     "image-list-placement.test.mjs",
-    "image-flow-media-paste.test.mjs"
+    "image-flow-media-paste.test.mjs",
+    "image-flow-rich-caret.test.mjs"
   ],
   "included_files": [
     "attached-source-peer-gate.test.mjs",
@@ -170,7 +171,8 @@
     "whole-text-replace.test.mjs",
     "block-insertion.test.mjs",
     "media-lifecycle.test.mjs",
-    "image-flow-media-paste.test.mjs"
+    "image-flow-media-paste.test.mjs",
+    "image-flow-rich-caret.test.mjs"
   ],
   "external_test_roots": [
     {

@@ -167,6 +167,20 @@ export function validateFlowFamily(state, f) {
     if (c.separatedPlacement) {
       const p = c.separatedPlacement;
       if (
+        p.neighbours !== undefined &&
+        (!p.neighbours ||
+          typeof p.neighbours !== "object" ||
+          !Array.isArray(p.neighbours.preceding) ||
+          !Array.isArray(p.neighbours.following) ||
+          [...p.neighbours.preceding, ...p.neighbours.following].some(
+            (id) => typeof id !== "string" || !state.nodes[id],
+          ) ||
+          new Set([...p.neighbours.preceding, ...p.neighbours.following])
+            .size !==
+            p.neighbours.preceding.length + p.neighbours.following.length)
+      )
+        throw Error("Invalid separated paragraph neighbours");
+      if (
         !(p.wrapper
           ? isList(state.nodes[p.parent]) &&
             p.wrapper.id === c.wrapper &&

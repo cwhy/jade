@@ -236,3 +236,38 @@ resolve rich-insert/image-projection composition before claiming general paste
 support. They are explicitly outside the passing package inventory and block
 full image-flow integration. No codec/wire fence, app/native qualification or
 public release is supplied by this checkpoint.
+
+
+## November 13: rich caret paste and mixed-flow structure
+
+Code/bullet paste into the projected plain suffix now promotes only the affected
+list domain to the existing mixed paragraph/list model. It preserves character
+and cut identities, independent ownership and the visible structure; ordinary
+rich-insert and caret planning need no special path. Materialized image records
+use retained boundaries, emitting same-boundary images in accepted order.
+
+Independent Undo/Redo revealed that cross-region restoration cannot depend only
+on immediate neighbors which another Undo may retire. Saved sibling neighborhoods
+and the same cut's current paragraph provide restoration witnesses. Live moved
+neighbors and intervening foreign structure still produce durable conflicts.
+Neighborhood snapshots cost O(scope children) on cross-region removal; conversion
+and retained-memory costs remain unmeasured.
+
+The new file has 38 schedules: six ordinary-prose controls, sixteen concurrent
+marked-text schedules, four second-image cases, four peer-Enter cases, two
+cell-overwrite cases, two malformed-state cases, two foreign-structure guards and
+two same-endpoint image-order cases. Each event checks duplicate decisions,
+JSON reload, replay and state validation. Both Undo orders preserve exact peer
+characters, marks and identities; peer Undo restores baseline.
+
+The historical bullet gate incorrectly expected a separate suffix paragraph.
+Existing ordinary-prose paste appends that suffix to the final bullet. The new
+controls assert that established behavior; the original test/log are preserved
+in the workspace report, not silently treated as unchanged passing assertions.
+
+Final packaged verification: 31 internal + 3,426 contracts across 84 roots,
+artifact `verify-rndhEF`. This is model evidence, not browser qualification.
+Further insertion into a materialized domain, broader mixed-domain combinations,
+performance, compatibility fencing and app integration remain open. The persisted
+`materialized` flag and separated-cut `neighbours` need explicit compatibility
+handling before release. Baseline version labels remain proof-harness labels.
