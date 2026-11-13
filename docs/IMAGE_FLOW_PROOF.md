@@ -189,3 +189,50 @@ including 244 image-placement cases (artifact `verify-NeEv4U`). Runtime is the
 join/replacement checkpoint; this follow-up adds tests only. Next qualification
 includes destination paste, structural commands and image-delete/resize
 combinations before compatibility fencing and application/browser integration.
+
+
+## November 13: image presence, size ownership and cell paste
+
+The dedicated `image-flow-media-paste.test.mjs` adds 29 cases. Each accepted or
+rejected operation is replayed, duplicated exactly, and followed by JSON room
+reload and state validation. The schedules cover pending/completed images at
+start/middle/end, explicit delete/restore, upload-generation fencing, size
+ownership and stale previews, offline marked text, two independently deleted
+images sharing a cut, cell replacement and restoration, and detached cell
+copies with completed assets and display size.
+
+Four invariants were repaired:
+
+- Explicit image deletion hides the object without changing its retained plain
+  suffix into another numbered item. Insertion activity still owns the cut;
+  only live images emit visible image events.
+- A flow-managed image restores via its own retained scope/cut. Its temporary
+  canonical staging neighbor is not a dependency on another image's lifetime.
+  Ordinary images keep their existing position witnesses.
+- Stale/unavailable resize operations raise admission conflicts, so the room
+  stores a rejected decision and advances the sequence instead of throwing an
+  unreceipted exception. Retry/replay does not admit a stale write.
+- Size Undo checks the exact image, asset, parent, dimensions and size owner.
+  Deleting and restoring that image changes presence generation but does not
+  replace its size contribution. Public resize previews still require the
+  current presence generation; newer peer sizes still block old size Undo.
+
+Cell replacement preserves the existing destructive-review rule. Typing, image
+completion or resizing after preview causes rejection without content change.
+A newly reviewed paste succeeds and Undo restores those edits. Pasting a copied
+cell makes fresh content identities without source flow/media/size ownership;
+source deletion cannot remove the destination's completed image reference.
+These are same-document engine checks, not cross-document asset authorization.
+
+Packaged verification: 31 internal + 3,388 contracts across 83 roots, artifact
+`verify-kNAXLk`. The previous 244 image-placement cases remain included.
+
+Two separate rich-caret cases remain failing in parent research
+`image-flow-media-paste-2026-11-13/rich-caret-gate.test.mjs`: pasting code or a
+bullet list inside the plain suffix. Rich insertion chooses its grammar from
+the canonical list wrapper, despite the visible prose destination; the planner
+also infers a tail identity from that mismatch. Preserve these assertions and
+resolve rich-insert/image-projection composition before claiming general paste
+support. They are explicitly outside the passing package inventory and block
+full image-flow integration. No codec/wire fence, app/native qualification or
+public release is supplied by this checkpoint.

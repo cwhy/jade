@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MPL-2.0
 import { treeParent } from "./tree.js";
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-export function imageSizeWitness(state, image) {
+export function imageSizeWitness(state, image, fail = (m) => Error(m)) {
   const n = state.nodes[image],
     parent = treeParent(state, image);
   if (!n?.live || n.type !== "image" || !n.asset || !parent)
-    throw Error("A completed image is required for resizing");
+    throw fail("A completed image is required for resizing");
   return {
     image,
     parent: parent.id,
@@ -17,7 +17,7 @@ export function imageSizeWitness(state, image) {
     owner: n.imageSizeOwner ?? null,
   };
 }
-export function validateImageSize(state, intent) {
+export function validateImageSize(state, intent, fail = (m) => Error(m)) {
   if (
     !intent ||
     Object.keys(intent).some(
@@ -27,15 +27,23 @@ export function validateImageSize(state, intent) {
     intent.width < 48 ||
     intent.width > 10000
   )
-    throw Error("Image width must be an integer between 48 and 10000 pixels");
-  const current = imageSizeWitness(state, intent.image);
+    throw fail("Image width must be an integer between 48 and 10000 pixels");
+  const current = imageSizeWitness(state, intent.image, fail);
   if (!same(current, intent.expected))
-    throw Error("Image changed; start resizing again");
+    throw fail("Image changed; start resizing again");
   return current;
 }
 export function executeImageSize(state, intent, action, { write, fail }) {
-  const current = imageSizeWitness(state, intent.image);
-  if (!same(current, intent.expected))
+  const current = imageSizeWitness(state, intent.image, fail);
+  // Public previews bind the current presence generation. Owned size Undo is
+  // different: deleting and restoring the same image does not replace its size
+  // contribution. Still require the exact asset, parent, dimensions and size
+  // owner so another resize cannot be overwritten after restoration.
+  const expected =
+    intent.kind === "restoreImageSize"
+      ? { ...intent.expected, presence: current.presence }
+      : intent.expected;
+  if (!same(current, expected))
     throw fail("Image changed; resize Undo/Redo cannot overwrite it");
   const n = { ...state.nodes[intent.image] },
     width = intent.kind === "imageResize" ? intent.width : intent.value.width,

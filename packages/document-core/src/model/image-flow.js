@@ -49,6 +49,17 @@ export function suspendImageFlow(state, write) {
   Object.assign(write("listFamilies"), cache.families);
   state.imageFlowProjection = null;
 }
+
+// Presence restoration stages an image in its canonical scope; this ledger
+// determines visible placement. Another image's staging order is not an anchor.
+export function imageFlowPresenceBoundary(state, image, parent) {
+  return Object.values(state.imageFlows || {}).some(
+    (r) => r.active && r.image === image && r.scope === parent,
+  )
+    ? { after: null }
+    : null;
+}
+
 export function imageFlowTarget(state, at, resolve) {
   const s = canonicalImageView(state),
     point = resolve(s, at),
@@ -182,7 +193,7 @@ export function projectImageFlow(state, host) {
       host.write("nodes")[id] = n;
     };
   const active = records
-    .filter((r) => r.active && state.nodes[r.image]?.live)
+    .filter((r) => r.active)
     .sort((a, b) => a.acceptedAt - b.acceptedAt);
   for (const listId of new Set(records.map((r) => r.baseList))) {
     const list = state.nodes[listId],
@@ -214,6 +225,10 @@ export function projectImageFlow(state, host) {
         side = "before";
         plain.add(block);
       } else block = host.resolveState(state, r.at).block;
+      // Explicit image deletion owns the object, not the surrounding paragraph
+      // kind or numbering. Its cut remains active until insertion itself is
+      // undone; only live images contribute a visible image event.
+      if (!state.nodes[r.image]?.live) continue;
       // Indenting an endpoint's item does not make its separate cell image an
       // item attachment. Keep that image outside the containing top-level item.
       let owner = treeParent(state, block);

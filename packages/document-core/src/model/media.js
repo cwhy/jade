@@ -118,7 +118,9 @@ export function executeMedia(state, intent, action, host) {
         kind: "imagePresence",
         image: node.id,
         parent: parent.id,
-        after: parent.children[position - 1] || null,
+        ...(host.presenceBoundary?.(node.id, parent.id) ?? {
+          after: parent.children[position - 1] || null,
+        }),
         active: false,
         expected: node.imageOwner,
         sizeOwner: node.imageSizeOwner ?? null,

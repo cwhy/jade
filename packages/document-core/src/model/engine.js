@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-import {executeImageFlow,suspendImageFlow,projectImageFlow,validateImageFlowState,canReuseImageFlow} from './image-flow.js';
+import {executeImageFlow,suspendImageFlow,projectImageFlow,validateImageFlowState,canReuseImageFlow,imageFlowPresenceBoundary} from './image-flow.js';
 import {executeImageSize,validateImageSize} from './image-size.js';
 import {executeMedia,fenceMedia} from './media.js';
 import {executeImagePlacement} from './image-placement.js';
@@ -785,7 +785,7 @@ function execute(state, intent, action, materialization = null) {
   }
   if(['imageResize','restoreImageSize'].includes(intent.kind))return executeImageSize(state,intent,action,{write:field=>writable(state,field),fail:m=>new Conflict(m)});
   if(intent.kind === 'imagePlace') return executeImagePlacement(state,intent,action,{execute:(i,id)=>execute(state,i,id,materialization),write:field=>writable(state,field),resolve:gap=>resolveGap(state,gap),gap:(id,offset)=>gapAt(state,id,offset),fail:m=>new Conflict(m)});
-  if(['imageInsert','imageComplete','imageDelete','imagePresence','mediaNoop'].includes(intent.kind))return executeMedia(state,intent,action,{write:field=>writable(state,field),resolve:gap=>resolveGap(state,gap),fail:m=>new Conflict(m)});
+  if(['imageInsert','imageComplete','imageDelete','imagePresence','mediaNoop'].includes(intent.kind))return executeMedia(state,intent,action,{write:field=>writable(state,field),resolve:gap=>resolveGap(state,gap),presenceBoundary:(image,parent)=>imageFlowPresenceBoundary(state,image,parent),fail:m=>new Conflict(m)});
   if (["tableCreate","tableCreationActive"].includes(intent.kind))
     return executeTableCreate(state,intent,action,{write:field=>writable(state,field),remember:(id,block,offset)=>rememberBoundary(state,id,block,offset),resolve:gap=>resolveGap(state,gap),fail:m=>new Conflict(m)});
   if (intent.kind === "creationItemMove")
@@ -1124,7 +1124,7 @@ export function apply(state, op, validateFinalShape = null) {
       find: (id) => findCharacter(state, id),
       fail: (m) => new Conflict(m),
     });
-  if(op.intent.kind === "imageResize") validateImageSize(state,op.intent);
+  if(op.intent.kind === "imageResize") validateImageSize(state,op.intent,m=>new Conflict(m));
   const next = stage(state);
   const reuseImageFlow = canReuseImageFlow(state, op.intent, resolveGap);
   if (!reuseImageFlow) suspendImageFlow(next,field=>writable(next,field));

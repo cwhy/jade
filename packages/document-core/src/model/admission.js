@@ -203,7 +203,7 @@ export function validatePublicIntent(
       return;
     case 'imageResize':
       if(inBatch)fail('Image resizing must be a complete operation');
-      validateImageSize(state,intent);return;
+      validateImageSize(state,intent,m=>new engine.Conflict('Admission: '+m));return;
     case 'imageListPlace':
       if(inBatch)fail('Image flow must be a complete operation');
       checkGap(state,intent.at);
