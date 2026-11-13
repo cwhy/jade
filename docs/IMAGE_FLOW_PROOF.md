@@ -89,3 +89,26 @@ not relax witness checking or imply that a stale Redo silently deletes new data.
 This qualifies these bounded container-retirement schedules. It does not yet
 qualify replacement paste, merges/joins, arbitrary moves, projected-wrapper
 commands, codec/wire migration, or application/browser integration.
+
+## November 13: typing within the affected list
+
+Visible paragraph insertion now reuses image topology both inside and outside
+the affected list. It changes replicas and retained gap positions, not the
+cached wrapper layout. Creation-owned/hidden paragraphs and active join
+projections conservatively rebuild. Three added contracts verify node-map and
+projection identity, reload and Undo for prefix, suffix and another list item.
+
+A local 100,000-word probe (five warmups, 50 measured edits per case) found
+prefix/same-list typing medians near 0.7 ms after reuse, versus approximately
+10.2 ms before. These are illustrative model-only measurements, not rendered
+application or release performance qualification.
+
+Two new join expectations remain unqualified and are preserved separately in
+parent research `image-flow-editing-2026-11-13/join-gate.test.mjs`. Backspace and
+forward Delete between two plain suffix paragraphs currently reject with a
+prose-context mismatch. Translating the command to a canonical list join alone
+is insufficient: join projection retires a paragraph still referenced by image
+flow's layout derivation. That attempted adapter was removed. The next change
+must define composition/order of join and image projections rather than weaken
+boundary validation. These two failures are excluded from the passing release
+inventory and explicitly remain an integration gate.

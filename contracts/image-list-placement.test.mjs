@@ -610,3 +610,29 @@ test("clearing one cell keeps another cell image flow live and unchanged", () =>
   validate(n);
   assert.deepEqual(n.nodes["other-cell"].children, other);
 });
+import { planDelete } from "@cwhy/jade-core/commands";
+for (const where of ["target", "A:s:1:cut:list-tail", "after"])
+  test(`typing inside flow retains topology ${where}`, () => {
+    const s = fixture(),
+      room = new Room(s);
+    room.accept(insertion(s, 10));
+    const before = room.record.state;
+    const peer = op("B", 1, {
+      kind: "insert",
+      at: gapAt(before, where, 1),
+      text: "友",
+      marks: ["strong"],
+    });
+    assert.equal(room.accept(peer).outcome, "accepted");
+    const next = room.record.state;
+    assert.equal(next.nodes, before.nodes);
+    assert.equal(next.imageFlowProjection, before.imageFlowProjection);
+    validate(next);
+    const fresh = new Room(null, JSON.parse(JSON.stringify(room.record)));
+    assert.deepEqual(fresh.record, room.record);
+    assert.equal(
+      fresh.accept(op("B", 2, { kind: "undo", target: peer.id })).outcome,
+      "accepted",
+    );
+    assert.deepEqual(projection(fresh.record.state), projection(before));
+  });

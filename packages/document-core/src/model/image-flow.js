@@ -6,25 +6,24 @@ import { itemMarker, listMarkers } from "./list-marker.js";
 import { validateMedia, createMediaImage } from "./media.js";
 import { deriveFlowRegions } from "./flow-placement.js";
 
-// Ordinary typing outside every projected list cannot change its topology.
-// Retain the projection and its node-map identity instead of rebuilding it.
+// Visible text insertion changes replicas and retained boundary positions, not
+// the list topology cached by this projection. Joins and creation revival have
+// their own topology projections and must still take the rebuilding path.
 export function canReuseImageFlow(state, intent, resolve) {
-  if (!state.imageFlowProjection || intent.kind !== "insert") return false;
-  const block = resolve(state, intent.at).block;
   if (
-    Object.values(state.listFamilies).some((f) =>
-      f.layout.blocks.includes(block),
-    )
+    !state.imageFlowProjection ||
+    intent.kind !== "insert" ||
+    state.joinProjection?.length
   )
     return false;
-  for (let n = treeParent(state, block); n; n = treeParent(state, n.id)) {
-    if (
-      ["ordered_list", "bullet_list"].includes(n.type) &&
-      Object.hasOwn(state.imageFlowProjection.nodes, n.id)
-    )
-      return false;
-  }
-  return true;
+  const block = resolve(state, intent.at).block,
+    node = state.nodes[block];
+  return (
+    node?.live &&
+    node.type === "paragraph" &&
+    !node.creation &&
+    !node.creationHidden
+  );
 }
 
 export function canonicalImageView(state) {
