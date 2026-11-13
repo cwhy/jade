@@ -914,3 +914,194 @@ for (const replacement of ["X", "X\nY", "\n"])
           accept(op("D", 2, { kind: "undo", target: "D:s:1" }));
           assert.deepEqual(text(room.record.state, "target"), original);
         });
+
+import { copyRange, copyCells, planTextFormat } from "@cwhy/jade-core/commands";
+for (const property of [
+  "strong",
+  "em",
+  "underline",
+  "strike",
+  "color",
+  "highlight",
+])
+  for (const imageFirst of [false, true])
+    test(`format image prefix/suffix retains peer contribution ${property} imageFirst=${imageFirst}`, () => {
+      const initial = fixture(),
+        value = ["color", "highlight"].includes(property)
+          ? { type: property, attrs: { color: "red" } }
+          : undefined;
+      let s = apply(initial, insertion(initial, 10));
+      const suffix = "A:s:1:cut:list-tail",
+        range = captureRange(
+          s,
+          { block: "target", offset: 5 },
+          { block: suffix, offset: 5 },
+        );
+      const author = op(
+        "B",
+        1,
+        planTextFormat(s, range, op("B", 1), { property, value }).intent,
+      );
+      const peerRange = captureRange(
+          s,
+          { block: suffix, offset: 1 },
+          { block: suffix, offset: 3 },
+        ),
+        peerIds = peerRange.slices[0].atoms.map((a) => a.id);
+      const peerValue = ["color", "highlight"].includes(property)
+        ? { type: property, attrs: { color: "blue" } }
+        : { type: property };
+      const peer = op(
+        "C",
+        1,
+        planTextFormat(s, peerRange, op("C", 1), {
+          property,
+          value: ["color", "highlight"].includes(property)
+            ? peerValue
+            : undefined,
+        }).intent,
+      );
+      s = apply(apply(s, author), peer);
+      for (const actor of imageFirst ? ["A", "B"] : ["B", "A"])
+        s = undo(s, actor, 2, `${actor}:s:1`);
+      assert.deepEqual(projection(s), projection(initial));
+      for (const atom of text(s, "target"))
+        assert.deepEqual(
+          atom.marks,
+          peerIds.includes(atom.id) ? [peerValue] : [],
+        );
+      s = undo(s, "C", 2, "C:s:1");
+      assert.deepEqual(text(s, "target"), text(initial, "target"));
+      validate(s);
+    });
+
+test("copy pending image flow blocks image transfer but permits plain suffix copy", () => {
+  const initial = fixture(),
+    s = apply(initial, insertion(initial, 10)),
+    before = JSON.stringify(s);
+  assert.throws(
+    () => copyCells(s, captureCellRange(s, "table", "cell")),
+    /upload is incomplete/,
+  );
+  assert.throws(
+    () =>
+      copyRange(
+        s,
+        captureRange(
+          s,
+          { block: "target", offset: 1 },
+          { block: "A:s:1:cut:list-tail", offset: 2 },
+        ),
+      ),
+    /image|asset/i,
+  );
+  const copied = copyRange(
+    s,
+    captureRange(
+      s,
+      { block: "A:s:1:cut:list-tail", offset: 1 },
+      { block: "A:s:1:cut:list-tail", offset: 4 },
+    ),
+  );
+  assert.equal(copied.plain, "ett");
+  assert.equal(copied.html, "<p>ett</p>");
+  assert.equal(JSON.stringify(s), before);
+});
+for (const wholeCell of [false, true])
+  test(`completed flow copy carries visible wrappers without ownership wholeCell=${wholeCell}`, () => {
+    const initial = fixture();
+    let s = apply(initial, insertion(initial, 10));
+    s = apply(
+      s,
+      op("host", 1, {
+        kind: "imageComplete",
+        image: "A:s:1:image",
+        generation: "A:s:1",
+        asset: "a".repeat(64),
+        mime: "image/png",
+        bytes: 160,
+        width: 160,
+        height: 64,
+      }),
+    );
+    const before = JSON.stringify(s),
+      copied = wholeCell
+        ? copyCells(s, captureCellRange(s, "table", "cell"))
+        : copyRange(
+            s,
+            captureRange(
+              s,
+              { block: "target", offset: 0 },
+              { block: "after", offset: 5 },
+            ),
+          ).fragment,
+      blocks = wholeCell ? copied.rows[0][0] : copied.blocks;
+    assert.deepEqual(
+      blocks.map((b) => b.type),
+      ["ordered_list", "image", "paragraph", "ordered_list"],
+    );
+    assert.equal(blocks[0].order ?? 1, wholeCell ? 1 : 2);
+    assert.equal(blocks[3].order, 3);
+    assert.equal(blocks[2].content.map((r) => r.text).join(""), "settings");
+    assert.deepEqual(blocks[1], {
+      type: "image",
+      asset: "a".repeat(64),
+      alt: "",
+      width: 160,
+      height: 64,
+    });
+    assert.doesNotMatch(
+      JSON.stringify(copied),
+      /"id"|"replicas"|"imageFlows"|"imageFlowKind"|"imageFlowProjection"|"generation"|"mediaSlot"/,
+    );
+    assert.equal(JSON.stringify(s), before);
+  });
+
+test("plain image suffix paragraphs copy as prose after Enter and join Undo", () => {
+  const initial = fixture();
+  let s = apply(initial, insertion(initial, 10));
+  const left = "A:s:1:cut:list-tail",
+    right = "B:s:1:list-tail";
+  s = apply(
+    s,
+    op(
+      "B",
+      1,
+      planEnter(
+        s,
+        captureRange(s, { block: left, offset: 3 }, { block: left, offset: 3 }),
+        op("B", 1),
+      ).intent,
+    ),
+  );
+  s = apply(
+    s,
+    op(
+      "B",
+      2,
+      planDelete(
+        s,
+        captureRange(
+          s,
+          { block: right, offset: 0 },
+          { block: right, offset: 0 },
+        ),
+        "backward",
+        op("B", 2),
+      ).intent,
+    ),
+  );
+  s = undo(s, "B", 3, "B:s:2");
+  const before = JSON.stringify(s),
+    copied = copyRange(
+      s,
+      captureRange(s, { block: left, offset: 0 }, { block: right, offset: 5 }),
+    );
+  assert.deepEqual(
+    copied.fragment.blocks.map((b) => b.type),
+    ["paragraph", "paragraph"],
+  );
+  assert.equal(copied.plain, "set\ntings");
+  assert.equal(copied.html, "<p>set</p><p>tings</p>");
+  assert.equal(JSON.stringify(s), before);
+});

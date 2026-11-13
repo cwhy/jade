@@ -166,3 +166,26 @@ prior coverage; they are not additive release-completion metrics.
 This qualifies adjacent plain suffix paragraphs only. Crossing an intervening
 image, arbitrary projected-wrapper operations, codec/wire fencing and app/UI
 integration remain open. No public release or deployment occurs in this proof.
+
+
+## November 13: visible copy and formatting
+
+Twelve added cases cover bold, italic, underline, strike, text color and
+highlight across the numbered prefix and plain suffix. Both format operations
+are planned from the same source, then accepted separately. Both image/author
+format Undo orders preserve the peer's overlap, and peer Undo restores the
+original marks and atoms.
+
+Four copy cases check unfinished-image transfer rejection while ordinary suffix
+text stays copyable; completed whole-cell and text-range copy retain the visible
+list/image/prose/list shape and resumed numbering without internal identities,
+media generation or image-flow ownership; plain paragraphs remain prose after
+join Undo. Copy leaves the source state unchanged. No additional runtime patch
+was required for these cases; external OS clipboard and destination paste are
+separate qualifications.
+
+Latest installed-package evidence: 31 internal + 3,359 contracts across 82 roots,
+including 244 image-placement cases (artifact `verify-NeEv4U`). Runtime is the
+join/replacement checkpoint; this follow-up adds tests only. Next qualification
+includes destination paste, structural commands and image-delete/resize
+combinations before compatibility fencing and application/browser integration.
