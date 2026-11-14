@@ -17,7 +17,7 @@ host conversion, preserving the ordinary cell review before committing. Imports,
 permissions, private source locators and upload retries remain host responsibilities.
 
 Wire43–49 journals upgrade one way; hosts must fence older live clients. Verification
-passes **31 internal + 3,557 packaged contracts / 86 roots**. Pending-image Fill
+passes **31 internal + 3,559 packaged contracts / 86 roots**. Pending-image Fill
 across multiple cells remains guarded; Match, Start and supported table expansion
 use the existing reviewed paste paths. This is bounded qualification, not full
 product parity.

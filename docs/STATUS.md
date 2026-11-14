@@ -4,7 +4,7 @@ Pending media can be part of one rich paste in document bodies, rich cells and
 supported image-bearing list items. Completion preserves owned Undo; stale
 reviewed replacement remains protected. A later image resize prevents destructive
 Undo of an attached pasted item, including release of its last placement hold.
-31 internal and 3,557 packaged checks pass. Protocol advances to wire50 with
+31 internal and 3,559 packaged checks pass. Protocol advances to wire50 with
 codec44 unchanged; journals from wire43–49 can upgrade before connecting.
 
 The host still authorizes and stores bytes. The standalone suite does not certify

@@ -316,3 +316,26 @@ for (const completionFirst of [false, true])
       "Copied",
     );
   });
+
+test('pending image expansion keeps one Undo and its completion owner',()=>{
+ const h=harness(fixture('grid')),a=op('A',1),range=captureCellRange(h.state,'table','cell','cell');
+ const fragment={version:1,rows:[[[paragraph('Left'),image(0)],[paragraph('Right'),image(1)]]]};
+ a.intent=planPasteCells(h.state,range,a,{preview:previewCellPaste(h.state,range,fragment,'expand')}).intent;
+ h.accept(a);const ids=images(h.state).map(n=>n.id);
+ assert.equal(ids.length,2);for(const [i,id] of ids.entries())h.accept(completion(h,id,i+1));
+ h.accept(undo(2,a.id));assert.ok(ids.every(id=>!h.state.nodes[id].live));
+ h.accept(undo(3,'A:s:2'));assert.ok(ids.every(id=>h.state.nodes[id].live&&h.state.nodes[id].asset));
+});
+test('pending-image Fill is guarded before mutation while explicit multi-cell mapping works',()=>{
+ const nodes=structuredClone(fixture('grid').nodes);
+ for(const n of Object.values(nodes))delete n.text;
+ nodes.row.children.push('other');nodes.other={id:'other',type:'cell',live:true,children:['q']};nodes.q={id:'q',type:'paragraph',live:true};
+ const h=harness(seed(nodes,{p:[{text:'Left'}],q:[{text:'Right'}]})),range=captureCellRange(h.state,'table','cell','other');
+ assert.throws(()=>previewCellPaste(h.state,range,{version:1,rows:[[[paragraph('Copied'),image(0)]]]},'fill'),/cannot fill multiple cells/);
+ const a=op('A',1),f={version:1,rows:[[[paragraph('One'),image(0)],[paragraph('Two'),image(1)]]]};
+ a.intent=planPasteCells(h.state,range,a,{preview:previewCellPaste(h.state,range,f)}).intent;
+ h.accept(a);const ids=images(h.state).map(n=>n.id);assert.equal(ids.length,2);
+ for(const [i,id] of ids.entries())h.accept(completion(h,id,i+1));
+ h.accept(undo(2,a.id));assert.equal(text(h.state,'p').map(a=>a.char).join(''),'Left');
+ assert.equal(text(h.state,'q').map(a=>a.char).join(''),'Right');
+});
