@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+import { initializeFragmentMedia, mediaContentShape } from "./media.js";
 import {
   attachedSourcePaste,
   executeAttachedSourcePaste,
@@ -230,7 +231,7 @@ export function executeRichForestActive(
       !n ||
       n.live === intent.active ||
       n.richLifecycle !== intent.expected ||
-      !same(shape(n), entry.shape)
+      !same(mediaContentShape(shape(n)), mediaContentShape(entry.shape))
     )
       throw fail("Pasted structure changed; review Undo");
     if (n.text && (!r || r.length || r.retired !== intent.active))
@@ -432,8 +433,17 @@ export function executeRichInsert(state, intent, action, host) {
     if (state.nodes[id]) throw host.fail("Pasted identity reused");
     if (itemDestination && b.type === "list_item" && blocks.includes(b))
       n.markerBase = sourceType;
-    for (const key of ["order", "language", "asset", "alt", "width", "height", "displayWidth"])
+    for (const key of [
+      "order",
+      "language",
+      "asset",
+      "alt",
+      "width",
+      "height",
+      "displayWidth",
+    ])
       if (b[key] !== undefined) n[key] = b[key];
+    initializeFragmentMedia(n, b, action, host.write);
     if (b.content) {
       n.text = `${id}:text`;
       if (state.replicas[n.text] || state.boundaries[`${n.text}:empty`])

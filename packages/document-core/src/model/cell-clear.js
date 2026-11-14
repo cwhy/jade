@@ -1,10 +1,21 @@
 // SPDX-License-Identifier: MPL-2.0
+import { initializeFragmentMedia, mediaContentShape } from "./media.js";
 import { executeTableFormat } from "./table-format.js";
 import { validateGridFragment, validateGridAssets } from "../grid-fragment.js";
 import { createReplica, internAtoms } from "../text/pieces.js";
 import { resolveCellRange } from "../selection/grid.js";
 import { isImmutable } from "./immutable.js";
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const sameWitness = (a, b, completionOwner) => {
+  const shape = (n) =>
+    completionOwner && n.createdBy === completionOwner
+      ? mediaContentShape(n)
+      : n;
+  return same(
+    { ...a, nodes: a.nodes.map(shape) },
+    { ...b, nodes: b.nodes.map(shape) },
+  );
+};
 const clone = (x) => structuredClone(x);
 function forest(state, cells) {
   const ids = [];
@@ -167,7 +178,13 @@ export function executeCellClear(
   )
     throw fail("Unknown cell lifecycle");
   if (intent.kind === "restoreClearedCells") {
-    if (!same(cellWitness(state, cells), intent.expected))
+    if (
+      !sameWitness(
+        cellWitness(state, cells),
+        intent.expected,
+        intent.completionOwner,
+      )
+    )
       throw fail(
         "Cleared cells have new content or structure; Undo cannot overwrite it",
       );
@@ -235,6 +252,7 @@ export function executeCellClear(
         "displayWidth",
       ])
         if (b[key] !== undefined) n[key] = b[key];
+      initializeFragmentMedia(n, b, action, write);
       if (b.content) {
         const replica = `${id}:text`,
           atoms = b.content
@@ -317,6 +335,21 @@ export function executeCellClear(
     restore: before,
     restoreExpected: expected,
     retirement: action,
+    // Only the paste's own resolution may advance without invalidating Undo.
+    // Keep this paired with its witness as Undo/Redo swap visible forests.
+    ...(intent.kind === "pasteCells" &&
+    Object.keys(state.pendingMedia || {}).some(
+      (id) => state.nodes[id]?.createdBy === action,
+    )
+      ? { completionOwner: action }
+      : {
+          ...(intent.restoreCompletionOwner
+            ? { completionOwner: intent.restoreCompletionOwner }
+            : {}),
+          ...(intent.completionOwner
+            ? { restoreCompletionOwner: intent.completionOwner }
+            : {}),
+        }),
   };
   return styleInverses.length
     ? { kind: "batch", intents: [...styleInverses, inverse] }

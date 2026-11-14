@@ -2,7 +2,27 @@
 
 **just-a-doc-engine** — an experimental rich-document editing engine.
 
-Current alpha.8 adds atomic groups of 2–16 image placeholders through
+Current **alpha.9 / wire50 / codec44** adds pending image slots inside rich body,
+list-item and reviewed cell pastes. A fragment image uses either a completed
+`asset` reference or `{slot, width, height}` with optional alt/display width;
+slots are unique and at most 16 may be pending in one paste. The host resolves
+them through the existing authorized `imageComplete` lifecycle.
+
+One paste owns its structure and Undo. Completion of its own slots does not
+invalidate Undo, while peer resizing, placement and text remain protected.
+Previously reviewed cell replacement still rejects a changed image; this is not
+a global exemption from structural witnesses. The browser controller exposes
+`capturePaste()` and `pastePrepared({mime, fragment}, bookmark, {onCommit})` for
+host conversion, preserving the ordinary cell review before committing. Imports,
+permissions, private source locators and upload retries remain host responsibilities.
+
+Wire43–49 journals upgrade one way; hosts must fence older live clients. Verification
+passes **31 internal + 3,557 packaged contracts / 86 roots**. Pending-image Fill
+across multiple cells remains guarded; Match, Start and supported table expansion
+use the existing reviewed paste paths. This is bounded qualification, not full
+product parity.
+
+Alpha.8 added atomic groups of 2–16 image placeholders through
 `planInsertBlock(..., { type: "image", images: [{ slot, width, height }, ...] })`.
 The host prepares every file first, then the command preserves file order and
 owns one Undo while uploads complete independently. The new `imageBatch` command

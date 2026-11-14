@@ -271,3 +271,22 @@ export function createMediaImage(
     expected: action,
   };
 }
+
+// Fragment callers have validated slot uniqueness and dimensions before mutation.
+// Node identity remains the rich-paste identity; no second insertion is emitted.
+export function initializeFragmentMedia(node, block, action, write) {
+  if (block.type !== "image" || !block.slot) return;
+  node.mediaSlot = block.slot;
+  node.createdBy = action;
+  node.imageOwner = action;
+  write("pendingMedia")[node.id] = { generation: action };
+}
+
+// Durable completion resolves the original slot, not a new user contribution.
+// Keep identity, presence/size ownership, alt text and placement in comparisons.
+// Only the host-only, write-once resolution fields are excluded for managed slots.
+export function mediaContentShape(node) {
+  if (node?.type !== "image" || !node.mediaSlot) return node;
+  const { asset, assetDescriptor, width, height, ...content } = node;
+  return content;
+}

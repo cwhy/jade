@@ -24,6 +24,7 @@ export function validateGridFragment(value) {
   let nodes = 0,
     size = 0,
     runs = 0;
+  const slots = new Set();
   if (
     !columns ||
     columns > 20 ||
@@ -68,7 +69,15 @@ export function validateGridFragment(value) {
       };
     }
     if (t === "image") {
-      exact(b, ["type", "asset", "alt", "width", "height", "displayWidth"]);
+      exact(b, [
+        "type",
+        "asset",
+        "slot",
+        "alt",
+        "width",
+        "height",
+        "displayWidth",
+      ]);
       if (
         b.displayWidth !== undefined &&
         (!Number.isSafeInteger(b.displayWidth) ||
@@ -76,7 +85,25 @@ export function validateGridFragment(value) {
           b.displayWidth > 10000)
       )
         throw Error("Invalid image display width");
-      if (typeof b.asset !== "string" || !b.asset || b.asset.length > 512)
+      if (Object.hasOwn(b, "slot")) {
+        if (
+          Object.hasOwn(b, "asset") ||
+          typeof b.slot !== "string" ||
+          !/^[-\w]{16,80}$/.test(b.slot) ||
+          slots.has(b.slot)
+        )
+          throw Error("Invalid or reused pending image slot");
+        slots.add(b.slot);
+        if (slots.size > 16)
+          throw Error("Paste supports at most 16 pending images");
+        for (const key of ["width", "height"])
+          if (!Number.isSafeInteger(b[key]) || b[key] < 1 || b[key] > 10000)
+            throw Error("Invalid pending image dimensions");
+      } else if (
+        typeof b.asset !== "string" ||
+        !b.asset ||
+        b.asset.length > 512
+      )
         throw Error("Invalid image asset reference");
       if (
         b.alt !== undefined &&
@@ -145,7 +172,7 @@ export function validateGridFragment(value) {
 export function gridAssets(fragment) {
   const assets = new Set();
   function walk(b) {
-    if (b.type === "image") assets.add(b.asset);
+    if (b.type === "image" && b.asset) assets.add(b.asset);
     for (const c of b.children || []) walk(c);
   }
   for (const row of fragment.rows)
@@ -153,6 +180,19 @@ export function gridAssets(fragment) {
   return [...assets];
 }
 export function validateGridAssets(state, fragment) {
+  const retainedSlots = new Set(
+    Object.values(state.nodes)
+      .map((n) => n.mediaSlot)
+      .filter(Boolean),
+  );
+  function pending(b) {
+    if (b.slot && retainedSlots.has(b.slot))
+      throw Error("Image slot identity reused");
+    for (const child of b.children || []) pending(child);
+  }
+  for (const row of fragment.rows)
+    for (const cell of row) for (const b of cell) pending(b);
+
   const owned = new Set(
     Object.values(state.nodes)
       .filter((n) => n.type === "image" && n.asset)
@@ -167,7 +207,7 @@ export function validateGridAssets(state, fragment) {
 export function gridPlainText(fragment) {
   function block(b, depth = 0) {
     if (b.content) return b.content.map((c) => c.text).join("");
-    if (b.type === "image") return `[Image: ${b.alt || b.asset}]`;
+    if (b.type === "image") return `[Image: ${b.alt || b.asset || "pending"}]`;
     if (["ordered_list", "bullet_list"].includes(b.type))
       return b.children
         .map(
@@ -209,7 +249,7 @@ export function gridHTML(fragment) {
         : html;
     }
     if (b.type === "image")
-      return `<p>[Image: ${escape(b.alt || b.asset)}]</p>`;
+      return `<p>[Image: ${escape(b.alt || b.asset || "pending")}]</p>`;
     const tag = { ordered_list: "ol", bullet_list: "ul", list_item: "li" }[
       b.type
     ];

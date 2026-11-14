@@ -135,6 +135,12 @@ export function reconcileCreationContent(state, id, host) {
   let r = state.creations[id],
     desired = r.active || heldCreation(r);
   if (r.contentApplied === desired) return;
+  // Deactivating a pasted attachment must not erase a later sizing edit. This
+  // also applies when the last independent placement hold is being released.
+  if (!desired && r.members.some((key) => state.nodes[key]?.imageSizeOwner))
+    throw host.fail(
+      "Pasted image was resized; Undo cannot remove that contribution",
+    );
   requireScope(state, r, host.fail);
   if (desired) {
     for (const key of r.members) setVisibility(state, key, true, host);

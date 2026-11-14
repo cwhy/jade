@@ -405,7 +405,7 @@ export function bindSelectionController({
       throw new ReviewRequired("Select a cell rectangle before clearing");
     execute(planners.clearCells, range, "cells");
   }
-  function beginCellPaste(input, range, formatNotice = "") {
+  function beginCellPaste(input, range, formatNotice = "", onCommit = null) {
     if (
       !planners.pasteCells ||
       !planners.copyCells ||
@@ -481,6 +481,7 @@ export function bindSelectionController({
             );
             pendingPaste = null;
             onCellPasteReview(null);
+            try { onCommit?.(); } catch { notice("Paste inserted; its follow-up action failed."); }
             return true;
           } catch (error) {
             pending.error = error.message;
@@ -1111,6 +1112,33 @@ export function bindSelectionController({
   for (const [name, handler] of Object.entries(handlers))
     root.addEventListener(name, handler);
   return {
+    isPlainPaste: () => plainPaste,
+    capturePaste() {
+      try { return !composing ? {client: client(), range: capture(client().state)} : null; }
+      catch { return null; }
+    },
+    pastePrepared({mime, fragment}, bookmark, {onCommit} = {}) {
+      try {
+        if (composing || !bookmark || bookmark.client !== client())
+          throw new ReviewRequired("Paste destination is no longer available");
+        typingStyle.clear();
+        plainPaste = false;
+        if (bookmark.range.kind === "cells") {
+          const grid = mime === SLICE_MIME
+            ? {version:1, rows:[[validateRichSlice(fragment).blocks]]}
+            : mime === GRID_MIME ? validateGridFragment(fragment) : null;
+          if (!grid) throw new ReviewRequired("Unsupported prepared clipboard format");
+          beginCellPaste(grid, bookmark.range, "", onCommit);
+        } else {
+          if (mime !== SLICE_MIME || !planners.richInsert)
+            throw new ReviewRequired("Select table cells before pasting this grid");
+          const slice = validateRichSlice(fragment);
+          execute((state, range, op) => planners.richInsert(state, range, slice, op), bookmark.range);
+          try { onCommit?.(); } catch { notice("Paste inserted; its follow-up action failed."); }
+        }
+        return true;
+      } catch (error) { notice(error.message); return false; }
+    },
     captureInsertion({allowRange=false}={}){
       try{const range=capture(client().state);return !composing&&!range.kind&&(range.collapsed||allowRange)?{client:client(),range}:null;}catch{return null;}
     },

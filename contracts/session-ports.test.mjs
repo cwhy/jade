@@ -161,7 +161,7 @@ test("host replication adapter owns replay and duplicate validation without bypa
 });
 
 
-for(const wire of [43,44,45,46,47,48])test(`wire${wire} journal upgrade preserves immutable pending edits and advertises wire49`,async()=>{
+for(const wire of [43,44,45,46,47,48,49])test(`wire${wire} journal upgrade preserves immutable pending edits and advertises wire50`,async()=>{
  const room=new Room(fixture()),record=structuredClone(room.snapshot());
  record.state.storageCodec=43;
  const op={actor:"A",stream:"legacy",seq:1,id:"A:legacy:1",epoch:record.state.epoch,intent:{kind:"insert",at:gapAt(record.state,"bp",0),text:"offline",marks:[]}};
@@ -169,14 +169,14 @@ for(const wire of [43,44,45,46,47,48])test(`wire${wire} journal upgrade preserve
  const h=await harness(undefined,saved);
  try {
   assert.deepEqual(h.session.client.pending,[op]);
-  assert.equal(h.trace.find(x=>x.kind==="send"&&x.message.type==="hello").message.wire,49);
+  assert.equal(h.trace.find(x=>x.kind==="send"&&x.message.type==="hello").message.wire,50);
   assert.deepEqual(h.trace.find(x=>x.kind==="send"&&x.message.type==="submit").message.op,op);
   h.receive({type:"events",events:[{cursor:1,op,receipt:h.room.accept(op)}]});await h.drain();
   assert.equal(h.session.client.pending.length,0);assert.equal(h.session.status(),"Saved to server");
  } finally {h.session.close();}
 });
 test("unsupported journal versions fail without rewriting the journal",async()=>{
- for(const wire of [42,50])await assert.rejects(()=>harness(undefined,{checkpoint:{wire}}),/original journal retained/);
+ for(const wire of [42,51])await assert.rejects(()=>harness(undefined,{checkpoint:{wire}}),/original journal retained/);
 });
 
 test("codec upgrade preserves receipts and identities, rejects unsupported input without mutation", async () => {
@@ -200,8 +200,8 @@ test("codec upgrade preserves receipts and identities, rejects unsupported input
 test("live wire fence rejects legacy/future versions before host data delivery", async()=>{
  const {requireWireVersion}=await import('@cwhy/jade-protocol');
  let deliveries=0;const serve=wire=>{requireWireVersion(wire);deliveries++;};
- for(const wire of [43,44,45,46,47,48,50,null,"49"])assert.throws(()=>serve(wire),/reload required/);
- assert.equal(deliveries,0);serve(49);assert.equal(deliveries,1);
+ for(const wire of [43,44,45,46,47,48,49,51,null,"50"])assert.throws(()=>serve(wire),/reload required/);
+ assert.equal(deliveries,0);serve(50);assert.equal(deliveries,1);
 });
 
 test("journal upgrade write failure retains original bytes and never connects",async()=>{
@@ -225,7 +225,7 @@ test("legacy journal replays saved events before atomically upgrading with pendi
  const h=await harness(undefined,saved);
  try {
   const write=h.trace.find(x=>x.kind==="write"&&x.checkpoint);
-  assert.equal(write.checkpoint.wire,49);assert.equal(write.checkpoint.record.state.storageCodec,44);assert.equal(write.checkpoint.cursor,1);
+  assert.equal(write.checkpoint.wire,50);assert.equal(write.checkpoint.record.state.storageCodec,44);assert.equal(write.checkpoint.cursor,1);
   assert.deepEqual(write.checkpoint.record.receipts[first.id],event.receipt);
   assert.deepEqual(write.head.pending,[pending]);assert.equal(JSON.stringify(saved),bytes);
   assert.ok(h.trace.indexOf(write)<h.trace.findIndex(x=>x.kind==="send"));

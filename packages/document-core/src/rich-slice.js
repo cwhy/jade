@@ -37,7 +37,7 @@ export function sliceHTML(value) {
   function block(b) {
     if (b.content) return htmlText({ version: 1, blocks: [b] });
     if (b.type === "image")
-      return `<p>[Image: ${escape(b.alt || b.asset)}]</p>`;
+      return `<p>[Image: ${escape(b.alt || b.asset || "pending")}]</p>`;
     const tag = { ordered_list: "ol", bullet_list: "ul", list_item: "li" }[
       b.type
     ];
@@ -49,7 +49,7 @@ export function slicePlainText(value) {
   const slice = validateRichSlice(value);
   function block(b, depth = 0) {
     if (b.content) return b.content.map((c) => c.text).join("");
-    if (b.type === "image") return `[Image: ${b.alt || b.asset}]`;
+    if (b.type === "image") return `[Image: ${b.alt || b.asset || "pending"}]`;
     if (["ordered_list", "bullet_list"].includes(b.type))
       return b.children
         .map((item, i) => {

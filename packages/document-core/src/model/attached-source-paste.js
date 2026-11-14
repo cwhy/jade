@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+import { initializeFragmentMedia } from "./media.js";
 import { registerCreation } from "./creation-lifecycle.js";
 import { treeParent } from "./tree.js";
 import { itemMarker, listMarkers } from "./list-marker.js";
@@ -148,8 +149,16 @@ export function executeAttachedSourcePaste(state, slice, at, action, host) {
   ]) {
     if (state.nodes[id]) throw host.fail("Pasted identity reused");
     const n = { id, type: b.type, live: true, richLifecycle: action };
-    for (const key of ["language", "asset", "alt", "width", "height", "displayWidth"])
+    for (const key of [
+      "language",
+      "asset",
+      "alt",
+      "width",
+      "height",
+      "displayWidth",
+    ])
       if (b[key] !== undefined) n[key] = b[key];
+    initializeFragmentMedia(n, b, action, host.write);
     if (b.content) {
       n.text = id + ":text";
       host.write("replicas")[n.text] = createReplica(n.text, id, [], action);

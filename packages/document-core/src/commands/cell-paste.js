@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-import {imageCopy} from "../model/image-size.js";
+import { imageCopy } from "../model/image-size.js";
 import { listMarkers } from "../model/list-marker.js";
 import { CELL_STYLE_PROPERTIES } from "../model/table-format.js";
 import { expansionPlan } from "../model/expanding-paste.js";
@@ -32,7 +32,7 @@ function cellFragment(state, range, preview) {
         content: [{ text: "[Image upload pending]", marks: [] }],
       };
     }
-    if(n.type === "image")return imageCopy(n);
+    if (n.type === "image") return imageCopy(n);
     const attrs = {};
     for (const k of ["language", "order", "asset", "alt", "width", "height"])
       if (n[k] !== undefined) attrs[k] = n[k];
@@ -148,6 +148,12 @@ export function previewCellPaste(state, selection, input, mode = "match") {
       },
     };
   } else if (mode === "fill") {
+    const pending = (b) =>
+      Boolean(b.slot) || Boolean(b.children?.some(pending));
+    if (selected.cells.flat().length > 1 && fragment.rows.flat(2).some(pending))
+      throw Error(
+        "Image transfers cannot fill multiple cells yet. Use Paste from starting cell.",
+      );
     if (rows.length !== 1 || rows[0].length !== 1)
       throw Error("Fill selected cells requires one source cell");
     rows = selected.cells.map((row) => row.map(() => rows[0][0]));

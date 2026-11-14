@@ -84,7 +84,8 @@
     "image-list-placement.test.mjs",
     "image-flow-media-paste.test.mjs",
     "image-flow-rich-caret.test.mjs",
-    "image-batch.test.mjs"
+    "image-batch.test.mjs",
+    "rich-pending-media.test.mjs"
   ],
   "included_files": [
     "attached-source-peer-gate.test.mjs",

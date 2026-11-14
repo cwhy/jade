@@ -1,3 +1,17 @@
+# Alpha.9 checkpoint — November 14, 2026
+
+Pending media can be part of one rich paste in document bodies, rich cells and
+supported image-bearing list items. Completion preserves owned Undo; stale
+reviewed replacement remains protected. A later image resize prevents destructive
+Undo of an attached pasted item, including release of its last placement hold.
+31 internal and 3,557 packaged checks pass. Protocol advances to wire50 with
+codec44 unchanged; journals from wire43–49 can upgrade before connecting.
+
+The host still authorizes and stores bytes. The standalone suite does not certify
+its import UI, permission routing or cloud deployment. Pending image Fill into
+multiple cells is not enabled. The browser host entry points preserve normal
+cell review, do not accept raw DOM mutations and call onCommit only after insertion.
+
 # Status and limitations
 
 jade is an alpha implementation, not a complete editor product or a stable storage-format promise.
