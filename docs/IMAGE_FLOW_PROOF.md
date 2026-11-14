@@ -1,4 +1,9 @@
-# Image-flow ownership proof — not released
+# Image-flow ownership qualification
+
+Delivery update, November 14: alpha.7 source is published on main. Engine CI passes
+on Node22/24 and the GitHub Pages demo is updated. The checkpoint notes below
+retain their historical local-only status; see STORAGE_UPGRADE.md for the current
+format boundary. This does not certify the full product spec or an npm release.
 
 This candidate supersedes the snapshot-inverse approach preserved on
 `experiment/list-image-placement`. The original 73 assertions remain intact

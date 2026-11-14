@@ -1,7 +1,7 @@
 # Image-flow candidate storage upgrade
 
-Local alpha.7 candidate: codec44 / wire48. This is not a published release or an
-application deployment. It fences image-flow ownership, materialized layout and
+Alpha.7 source is published on main: codec44 / wire48. The package remains an
+experimental alpha; no npm registry publication is implied. It fences image-flow ownership, materialized layout and
 shared neighbor witnesses from readers that only understand codec43.
 
 ## Load boundary
