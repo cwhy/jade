@@ -329,3 +329,20 @@ Validation still expands witnesses; that cost remains measurable.
 59 focused cases and 31 internal + 3,447 package contracts / 84 roots pass
 (`verify-8cRwUN`). Added checks cover malformed pools/references, unsupported
 versions, unknown nodes and legacy Undo/Redo/recapture. No app changes or release.
+
+
+## November 14: versioned candidate load boundaries
+
+Local packages now identify as alpha.7 / codec44 / wire48. New seeds and direct
+core edits require codec44. Explicit storage upgrade validates a clone and leaves
+legacy source bytes unchanged. Room/Client/replay use that upgrade at load time.
+DocumentSession reads wire43–47 journals, preserves receipts and pending payloads,
+replays saved events and writes the upgraded checkpoint before connecting.
+Failed writes prevent connection. Unsupported codecs/journal versions are rejected.
+
+The protocol provides a strict live-wire guard; the application must invoke it
+before egress, including resumed connections. This is an engine candidate, not
+proof that the existing deployed host enforces wire48. See STORAGE_UPGRADE.md for
+transaction, rollback and integration obligations. Incremental validation now
+includes the shared neighbor pool in its certified dependencies and falls back to
+full validation when that pool changes. No release or deployment has occurred.

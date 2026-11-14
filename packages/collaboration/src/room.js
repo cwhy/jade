@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+import {upgradeRecord} from "./storage.js";
 import { immutable } from "@cwhy/jade-core/immutability";
 import { decide } from "./decision.js";
 export { decide } from "./decision.js";
@@ -7,8 +8,8 @@ export class Room {
   constructor(state, record) {
     this.record = immutable(
       record
-        ? clone(record)
-        : { state: clone(state), receipts: {}, frontiers: {} },
+        ? clone(upgradeRecord(record))
+        : { state: clone(upgradeRecord({state}).state), receipts: {}, frontiers: {} },
     );
   }
   accept(op) {

@@ -59,7 +59,7 @@ test("Codec 42 is rejected and cannot be silently retagged without visibility me
   const s = fixture();
   s.storageCodec = 42;
   assert.throws(() => validate(s));
-  s.storageCodec = 43;
+  s.storageCodec = 44;
   delete s.textClaims;
   delete s.textMasks;
   assert.throws(() => validate(s));

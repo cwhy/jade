@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+import {STORAGE_CODEC} from "./codec.js";
 import { validateCreationPlacements } from "./creation-placement.js";
 import { validateCreations } from "./creation-lifecycle.js";
 import { validateJoins } from "./join-ledger.js";
@@ -15,6 +16,7 @@ const forests = new WeakMap(),
   replicasChecked = new WeakMap(),
   certified = new WeakMap();
 const dependencies = [
+  "neighborChunks",
   "textClaims",
   "textMasks",
   "creationPlacements",
@@ -160,8 +162,9 @@ export function validateChanged(state, full) {
     certificate.storageCodec !== base.storageCodec ||
     dependencies.some((key) => certificate[key] !== base[key]) ||
     state.nodes !== base.nodes ||
+    state.neighborChunks !== base.neighborChunks ||
     state.root !== base.root ||
-    state.storageCodec !== 43 ||
+    state.storageCodec !== STORAGE_CODEC ||
     !forests.get(base.nodes)?.has(base.root)
   )
     return complete();

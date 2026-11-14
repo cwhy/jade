@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+import {upgradeRecord} from "./storage.js";
 import { immutable } from "@cwhy/jade-core/immutability";
 import { apply, Conflict } from "@cwhy/jade-core/admission";
 const clone = (x) => structuredClone(x);
@@ -10,7 +11,7 @@ export class Client {
     this.stream = stream;
     this.seq = saved?.seq || 0;
     this.inflight = clone(saved?.inflight || null);
-    this.base = immutable(saved?.base ? clone(saved.base) : room);
+    this.base = immutable(upgradeRecord(saved?.base ? clone(saved.base) : room));
     this.pending = clone(saved?.pending || []);
     this.undoStack = this.pending.map((x) => ({ ids: [x.id], group: null }));
     this.redoStack = [];

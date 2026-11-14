@@ -68,7 +68,7 @@ async function harness(replication, saved = {}) {
     socket.onmessage({ data: JSON.stringify(message) });
   };
   socket.onopen();
-  receive({ type: "ready", cursor: 0 });
+  receive({ type: "ready", cursor: session.cursor });
   await drain();
   assert.equal(session.ready, true);
   return {
@@ -161,19 +161,73 @@ test("host replication adapter owns replay and duplicate validation without bypa
 });
 
 
-for(const wire of [43,44,45,46])test(`wire${wire} journal upgrade preserves immutable pending edits and advertises wire47`,async()=>{
- const room=new Room(fixture()),record=room.snapshot();
+for(const wire of [43,44,45,46,47])test(`wire${wire} journal upgrade preserves immutable pending edits and advertises wire48`,async()=>{
+ const room=new Room(fixture()),record=structuredClone(room.snapshot());
+ record.state.storageCodec=43;
  const op={actor:"A",stream:"legacy",seq:1,id:"A:legacy:1",epoch:record.state.epoch,intent:{kind:"insert",at:gapAt(record.state,"bp",0),text:"offline",marks:[]}};
  const saved={checkpoint:{wire,record,cursor:0},events:[],head:{stream:"legacy",seq:1,pending:[op],cursor:0}};
  const h=await harness(undefined,saved);
  try {
   assert.deepEqual(h.session.client.pending,[op]);
-  assert.equal(h.trace.find(x=>x.kind==="send"&&x.message.type==="hello").message.wire,47);
+  assert.equal(h.trace.find(x=>x.kind==="send"&&x.message.type==="hello").message.wire,48);
   assert.deepEqual(h.trace.find(x=>x.kind==="send"&&x.message.type==="submit").message.op,op);
   h.receive({type:"events",events:[{cursor:1,op,receipt:h.room.accept(op)}]});await h.drain();
   assert.equal(h.session.client.pending.length,0);assert.equal(h.session.status(),"Saved to server");
  } finally {h.session.close();}
 });
 test("unsupported journal versions fail without rewriting the journal",async()=>{
- for(const wire of [42,48])await assert.rejects(()=>harness(undefined,{checkpoint:{wire}}),/original journal retained/);
+ for(const wire of [42,49])await assert.rejects(()=>harness(undefined,{checkpoint:{wire}}),/original journal retained/);
+});
+
+test("codec upgrade preserves receipts and identities, rejects unsupported input without mutation", async () => {
+ const {upgradeStorage,STORAGE_CODEC}=await import('@cwhy/jade-core/storage');
+ const {apply}=await import('@cwhy/jade-core/model');
+ const old=fixture();old.storageCodec=43;
+ const before=JSON.stringify(old),next=upgradeStorage(old);
+ assert.equal(STORAGE_CODEC,44);assert.equal(next.storageCodec,44);
+ assert.deepEqual({...next,storageCodec:43},old);assert.equal(JSON.stringify(old),before);
+ const op={actor:"A",stream:"migration",seq:1,id:"A:migration:1",epoch:old.epoch,intent:{kind:"insert",at:gapAt(old,"bp",0),text:"saved",marks:[]}};
+ assert.throws(()=>apply(old,op),/codec/);
+ const room=new Room(old);const receipt=room.accept(op);
+ const record=structuredClone(room.snapshot());record.state.storageCodec=43;
+ const snapshot=JSON.stringify(record),restored=new Room(null,record);
+ assert.deepEqual(restored.accept(op),receipt);assert.equal(JSON.stringify(record),snapshot);
+ for(const codec of [42,45]){const bad={...old,storageCodec:codec};assert.throws(()=>upgradeStorage(bad),/source retained/);assert.equal(bad.storageCodec,codec);}
+ const malformed=structuredClone(old);delete malformed.textClaims;
+ assert.throws(()=>upgradeStorage(malformed));assert.equal(malformed.storageCodec,43);
+});
+
+test("live wire fence rejects legacy/future versions before host data delivery", async()=>{
+ const {requireWireVersion}=await import('@cwhy/jade-protocol');
+ let deliveries=0;const serve=wire=>{requireWireVersion(wire);deliveries++;};
+ for(const wire of [43,44,45,46,47,49,null,"48"])assert.throws(()=>serve(wire),/reload required/);
+ assert.equal(deliveries,0);serve(48);assert.equal(deliveries,1);
+});
+
+test("journal upgrade write failure retains original bytes and never connects",async()=>{
+ const old=fixture();old.storageCodec=43;
+ const saved={checkpoint:{wire:47,record:{state:old,receipts:{},frontiers:{}},cursor:0},events:[],head:{stream:"legacy",seq:0,pending:[],cursor:0}};
+ const bytes=JSON.stringify(saved);let connected=0,closed=0;
+ await assert.rejects(()=>DocumentSession.open("mock","A",()=>{}, {
+  openJournal:async()=>({read:async()=>structuredClone(saved),write:async()=>{throw Error("atomic write failed");},close:()=>closed++}),
+  readCheckpoint:async()=>{throw Error("unexpected checkpoint fetch");},connect:()=>{connected++;},createStream:()=>"new",now:()=>0,schedule:()=>0,cancel:()=>{},checkpointEvery:100,openState:1
+ }),/atomic write failed/);
+ assert.equal(JSON.stringify(saved),bytes);assert.equal(connected,0);assert.equal(closed,1);
+});
+
+test("legacy journal replays saved events before atomically upgrading with pending bytes intact",async()=>{
+ const old=fixture();old.storageCodec=43;
+ const room=new Room(old),record=structuredClone(room.snapshot());record.state.storageCodec=43;
+ const first={actor:"A",stream:"legacy",seq:1,id:"A:legacy:1",epoch:old.epoch,intent:{kind:"insert",at:gapAt(old,"bp",0),text:"saved",marks:[]}};
+ const event={cursor:1,op:first,receipt:room.accept(first)};
+ const pending={actor:"A",stream:"legacy",seq:2,id:"A:legacy:2",epoch:old.epoch,intent:{kind:"insert",at:gapAt(room.record.state,"bp",0),text:"pending",marks:[]}};
+ const saved={checkpoint:{wire:47,record,cursor:0},events:[event],head:{stream:"legacy",seq:2,pending:[pending],cursor:1}},bytes=JSON.stringify(saved);
+ const h=await harness(undefined,saved);
+ try {
+  const write=h.trace.find(x=>x.kind==="write"&&x.checkpoint);
+  assert.equal(write.checkpoint.wire,48);assert.equal(write.checkpoint.record.state.storageCodec,44);assert.equal(write.checkpoint.cursor,1);
+  assert.deepEqual(write.checkpoint.record.receipts[first.id],event.receipt);
+  assert.deepEqual(write.head.pending,[pending]);assert.equal(JSON.stringify(saved),bytes);
+  assert.ok(h.trace.indexOf(write)<h.trace.findIndex(x=>x.kind==="send"));
+ }finally{h.session.close();}
 });

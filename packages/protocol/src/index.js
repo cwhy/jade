@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
-// Experimental wire version, separate from package SemVer and codec 43.
-export const WIRE_VERSION = 47;
+// Experimental wire version, separate from package SemVer and codec 44.
+export const WIRE_VERSION = 48;
 export function envelope(op, actor) {
   if (
     !op ||
@@ -16,4 +16,10 @@ export function envelope(op, actor) {
   )
     throw Error("Invalid operation identity/envelope");
   return op;
+}
+
+// Hosts must call before sending any checkpoint or events to a connection.
+export function requireWireVersion(wire) {
+  if (wire !== WIRE_VERSION)
+    throw Error("Wire version mismatch; reload required");
 }

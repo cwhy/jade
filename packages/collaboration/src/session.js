@@ -7,6 +7,7 @@
 // head/events/checkpoint. Optional onDurable({cursor, seq}) runs synchronously
 // after journal commit, independently of rendering, for transport flow control.
 // Host authentication precedes these capabilities.
+import {upgradeRecord} from "./storage.js";
 import { Client } from "./client.js";
 import { WIRE_VERSION } from "@cwhy/jade-protocol";
 import { replay } from "./replay.js";
@@ -94,14 +95,12 @@ export class DocumentSession {
     const saved = await this.journal.read();
     let record, stream;
     if (saved.checkpoint) {
-      // Wire47 adds image display sizing using optional codec43 node attributes.
-      // Prior wire43/44 journals retain their codec43 meaning and immutable
-      // operation payloads. This is a one-way reader upgrade.
-      if (saved.checkpoint.wire !== WIRE_VERSION && !(WIRE_VERSION === 47 && [43,44,45,46].includes(saved.checkpoint.wire)))
+      // Read old local journals, but never negotiate an old live wire.
+      if (![43,44,45,46,47,WIRE_VERSION].includes(saved.checkpoint.wire))
         throw Error(
           "Incompatible lab journal version; original journal retained",
         );
-      record = saved.checkpoint.record;
+      record = upgradeRecord(saved.checkpoint.record);
       this.cursor = saved.checkpoint.cursor;
       for (const event of saved.events) {
         if (event.cursor !== this.cursor + 1)
@@ -118,13 +117,16 @@ export class DocumentSession {
         base: record,
       });
       this.persistedIds = new Set(saved.head.pending.map((op) => op.id));
+      if (saved.checkpoint.wire !== WIRE_VERSION || record !== saved.checkpoint.record) {
+        await this.journal.write(this.head(), null, {wire:WIRE_VERSION,record,cursor:this.cursor});
+      }
     } else {
       const raw = await this.ports.readCheckpoint(),
         checkpoint = JSON.parse(raw);
       if (checkpoint.wire !== WIRE_VERSION)
         throw Error("Wire version mismatch");
       this.metrics.checkpointBytes = new TextEncoder().encode(raw).length;
-      record = checkpoint.record;
+      record = upgradeRecord(checkpoint.record);
       this.cursor = checkpoint.cursor;
       stream = this.ports.createStream();
       this.client = new Client(this.actor, stream, record);

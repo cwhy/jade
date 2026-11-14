@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+import {STORAGE_CODEC} from "./codec.js";
 import {validateNeighborStorage} from "./neighbor-storage.js";
 import {executeImageFlow,suspendImageFlow,projectImageFlow,validateImageFlowState,canReuseImageFlow,imageFlowPresenceBoundary} from './image-flow.js';
 import {materializeImageFlowForRichInsert} from './image-flow-materialization.js';
@@ -1020,7 +1021,7 @@ function execute(state, intent, action, materialization = null) {
   throw new Error("Unsupported intent");
 }
 export function apply(state, op, validateFinalShape = null) {
-  if (state.storageCodec !== 43)
+  if (state.storageCodec !== STORAGE_CODEC)
     throw new Conflict("Incompatible storage codec");
   if (op.epoch !== state.epoch) throw new Conflict("Document epoch changed");
   function internal(i) {
@@ -1220,7 +1221,7 @@ export function validate(state, incremental = false) {
   validateBoundaryParagraphs(state);
   validateListFamilies(state);
   validateJoins(state);
-  if (state.storageCodec !== 43)
+  if (state.storageCodec !== STORAGE_CODEC)
     throw new Conflict("Incompatible storage codec");
   const visited = new Set(),
     textOwners = new Set();
@@ -1295,7 +1296,7 @@ export function validate(state, incremental = false) {
 }
 export function seed(nodes, contents, root = "doc") {
   const state = {
-    storageCodec: 43,
+    storageCodec: STORAGE_CODEC,
     pendingMedia: {},
     textClaims: {},
     textMasks: {},
