@@ -2,6 +2,17 @@
 
 **just-a-doc-engine** — an experimental rich-document editing engine.
 
+Current alpha.8 adds atomic groups of 2–16 image placeholders through
+`planInsertBlock(..., { type: "image", images: [{ slot, width, height }, ...] })`.
+The host prepares every file first, then the command preserves file order and
+owns one Undo while uploads complete independently. The new `imageBatch` command
+requires **wire49**, retains **codec44**, and reads wire43–48 journals on one-way
+upgrade. Hosts must fence older clients before emitting it. Invalid groups leave
+content unchanged; peer sizing can reject the entire Undo rather than remove
+only part of the group. Standalone verification passes **31 internal + 3,520
+packaged contracts across 85 roots**. This is bounded engine evidence, not full
+product qualification.
+
 jade provides document structure, editing commands, stable identities, collaborative Undo and browser input/rendering adapters. It is designed for rich cells containing paragraphs, lists, code and images. It is not a Markdown-based document model or a ready-made document application.
 
 > **Alpha software.** The API and document format may change. Do not treat the current tests as production certification. See [status and limitations](docs/STATUS.md).

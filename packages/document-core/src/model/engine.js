@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+import {executeImageBatch} from './image-batch.js';
 import {STORAGE_CODEC} from "./codec.js";
 import {validateNeighborStorage} from "./neighbor-storage.js";
 import {executeImageFlow,suspendImageFlow,projectImageFlow,validateImageFlowState,canReuseImageFlow,imageFlowPresenceBoundary} from './image-flow.js';
@@ -745,6 +746,7 @@ function formatActive(state, intent) {
 }
 function execute(state, intent, action, materialization = null) {
   const imageHost={execute:(i,id)=>execute(state,i,id,materialization),write:f=>writable(state,f),resolveState:resolveGap,gapState:gapAt,fail:m=>new Conflict(m)};
+  if(intent.kind==='imageBatch')return executeImageBatch(state,intent,action,imageHost);
   if(['imageListPlace','imageFlowActive'].includes(intent.kind))return executeImageFlow(state,intent,action,imageHost);
   // A plain suffix uses the retained canonical list cut beneath image layout.
   // Its visible command remains proseJoin; the ledger owns that same cut.

@@ -1,6 +1,6 @@
 {
   "name": "@cwhy/jade-testkit",
-  "version": "0.1.0-alpha.7",
+  "version": "0.1.0-alpha.8",
   "private": true,
   "type": "module",
   "license": "MPL-2.0",
@@ -16,8 +16,8 @@
     "./table-fixture": "./src/table-fixture.js"
   },
   "dependencies": {
-    "@cwhy/jade-core": "0.1.0-alpha.7",
-    "@cwhy/jade-collaboration": "0.1.0-alpha.7"
+    "@cwhy/jade-core": "0.1.0-alpha.8",
+    "@cwhy/jade-collaboration": "0.1.0-alpha.8"
   },
   "repository": {
     "type": "git",

@@ -8,8 +8,10 @@ export function planInsertBlock(
   state,
   range,
   op,
-  { type, rows = 2, columns = 3, slot, width, height } = {},
+  { type, rows = 2, columns = 3, slot, width, height, images } = {},
 ) {
+  if (type === "image" && images !== undefined)
+    return planImageBatch(state, range, op, images);
   validateDestination(state, range);
   if (
     range.kind ||
@@ -90,4 +92,43 @@ export function planInsertBlock(
     inserted = plan.state.nodes[inserted.children[0]];
   if (!inserted) throw new ReviewRequired("No editable insertion target");
   return { ...plan, after: gapAt(plan.state, inserted.id, 0) };
+}
+
+// One semantic image group owns the text cut and all its upload slots.
+function planImageBatch(state, range, op, images) {
+  if (
+    !Array.isArray(images) ||
+    !images.length ||
+    images.length > 16 ||
+    images.some(
+      (image) =>
+        !image ||
+        typeof image !== "object" ||
+        Object.keys(image).some(
+          (key) => !["slot", "width", "height"].includes(key),
+        ),
+    )
+  )
+    throw new ReviewRequired("Choose between 1 and 16 images");
+  if (images.length === 1)
+    return planInsertBlock(state, range, op, { type: "image", ...images[0] });
+  const first = planInsertBlock(state, range, op, {
+      type: "image",
+      ...images[0],
+    }),
+    flow = first.intent.kind === "imageListPlace",
+    intent = {
+      kind: "imageBatch",
+      placement: first.intent.kind,
+      at: range.start,
+      ...(first.intent.ids ? { ids: first.intent.ids } : {}),
+      images,
+    },
+    next = apply(state, { ...op, intent }),
+    tail = op.id + ":part:0:cut:" + (flow ? "list-tail" : "paragraph");
+  return {
+    intent,
+    state: next,
+    after: next.nodes[tail]?.live ? gapAt(next, tail, 0) : range.start,
+  };
 }
