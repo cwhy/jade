@@ -4,6 +4,7 @@ import { isImmutable } from "./immutable.js";
 // All mutations of these collections must go through writable()/erase().
 const drafts = new WeakMap();
 const fields = new Set([
+  "neighborChunks",
   "pendingMedia",
   "imageFlows",
   "textClaims",
@@ -31,7 +32,11 @@ export function stage(state) {
   // original eager shallow-copy behavior until the host seals it.
   if (!isImmutable(state))
     for (const field of fields) {
-      if (field === "imageFlows" && state[field] === undefined) continue;
+      if (
+        ["imageFlows", "neighborChunks"].includes(field) &&
+        state[field] === undefined
+      )
+        continue;
       next[field] = Array.isArray(state[field])
         ? [...state[field]]
         : { ...state[field] };

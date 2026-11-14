@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+import {validateNeighborStorage} from "./neighbor-storage.js";
 import {executeImageFlow,suspendImageFlow,projectImageFlow,validateImageFlowState,canReuseImageFlow,imageFlowPresenceBoundary} from './image-flow.js';
 import {materializeImageFlowForRichInsert} from './image-flow-materialization.js';
 import {executeImageSize,validateImageSize} from './image-size.js';
@@ -1202,6 +1203,7 @@ export function apply(state, op, validateFinalShape = null) {
 }
 const checkedRuns = new WeakSet();
 export function validate(state, incremental = false) {
+  validateNeighborStorage(state);
   validateImageFlowState(state,{resolveState:resolveGap,fail:m=>new Conflict(m)});
   validateTextClaims(state);
   validateCreations(state);

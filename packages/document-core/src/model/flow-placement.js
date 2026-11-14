@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+import { readNeighbours } from "./neighbor-storage.js";
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const isList = (n) => ["ordered_list", "bullet_list"].includes(n?.type);
 const plain = (n) => ["doc", "cell", "list_item"].includes(n?.type);
@@ -166,20 +167,17 @@ export function validateFlowFamily(state, f) {
   for (const c of Object.values(f.cuts))
     if (c.separatedPlacement) {
       const p = c.separatedPlacement;
-      if (
-        p.neighbours !== undefined &&
-        (!p.neighbours ||
-          typeof p.neighbours !== "object" ||
-          !Array.isArray(p.neighbours.preceding) ||
-          !Array.isArray(p.neighbours.following) ||
-          [...p.neighbours.preceding, ...p.neighbours.following].some(
-            (id) => typeof id !== "string" || !state.nodes[id],
+      if (p.neighbours !== undefined) {
+        const n = readNeighbours(state, p.neighbours),
+          all = [...n.preceding, ...n.following];
+        if (
+          all.some(
+            (id) => typeof id !== "string" || !Object.hasOwn(state.nodes, id),
           ) ||
-          new Set([...p.neighbours.preceding, ...p.neighbours.following])
-            .size !==
-            p.neighbours.preceding.length + p.neighbours.following.length)
-      )
-        throw Error("Invalid separated paragraph neighbours");
+          new Set(all).size !== all.length
+        )
+          throw Error("Invalid separated paragraph neighbours");
+      }
       if (
         !(p.wrapper
           ? isList(state.nodes[p.parent]) &&

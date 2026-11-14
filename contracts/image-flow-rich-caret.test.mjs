@@ -464,3 +464,81 @@ for (const type of ["code", "bullet_list"])
         assert.deepEqual(text(r.state, "target"), atoms);
       }
     });
+
+test("shared neighbor chunks validate references and legacy arrays remain readable", async () => {
+  const { apply } = await import("@cwhy/jade-core/model");
+  const r = durable();
+  insert(r, 10);
+  r.accept(paste(r.state, suffix, 3, "code"));
+  r.accept(undo("A", 2, "A:s:1"));
+  r.accept(undo("B", 2, "B:s:1"));
+  const stored = JSON.parse(JSON.stringify(r.state));
+  const cut = Object.values(stored.listFamilies)
+    .flatMap((f) => Object.values(f.cuts))
+    .find((c) => c.separatedPlacement?.neighbours);
+  assert.equal(cut.separatedPlacement.neighbours.version, 1);
+  for (const corrupt of [
+    (s) => {
+      s.neighborChunks = null;
+    },
+    (s) => {
+      delete s.neighborChunks[Object.keys(s.neighborChunks)[0]];
+    },
+    (s) => {
+      s.neighborChunks[Object.keys(s.neighborChunks)[0]] = ["missing"];
+    },
+    (s) => {
+      s.neighborChunks[Object.keys(s.neighborChunks)[0]] =
+        Array(65).fill("list");
+    },
+    (s) => {
+      const n = Object.values(s.listFamilies)
+        .flatMap((f) => Object.values(f.cuts))
+        .find((c) => c.separatedPlacement?.neighbours)
+        .separatedPlacement.neighbours;
+      n.version = 2;
+    },
+    (s) => {
+      const n = Object.values(s.listFamilies)
+        .flatMap((f) => Object.values(f.cuts))
+        .find((c) => c.separatedPlacement?.neighbours)
+        .separatedPlacement.neighbours;
+      n.preceding = ["__proto__"];
+    },
+  ]) {
+    const forged = structuredClone(stored);
+    corrupt(forged);
+    assert.throws(() => validate(forged), /neighbours/);
+  }
+  const legacy = structuredClone(stored);
+  for (const f of Object.values(legacy.listFamilies))
+    for (const c of Object.values(f.cuts)) {
+      const n = c.separatedPlacement?.neighbours;
+      if (n?.version === 1)
+        c.separatedPlacement.neighbours = {
+          preceding: n.preceding.flatMap((id) => legacy.neighborChunks[id]),
+          following: n.following.flatMap((id) => legacy.neighborChunks[id]),
+        };
+    }
+  delete legacy.neighborChunks;
+  validate(legacy);
+  let modern = stored,
+    old = legacy;
+  for (const o of [
+    undo("A", 3, "A:s:2"),
+    undo("B", 3, "B:s:2"),
+    undo("A", 4, "A:s:3"),
+    undo("B", 4, "B:s:3"),
+  ]) {
+    modern = apply(modern, o);
+    old = apply(old, o);
+    validate(modern);
+    validate(old);
+    assert.deepEqual(
+      visibleTree(modern, modern.nodes.cell.children),
+      visibleTree(old, old.nodes.cell.children),
+    );
+    assert.deepEqual(text(modern, "target"), text(old, "target"));
+  }
+  assert.ok(old.neighborChunks, "new capture upgrades legacy witnesses lazily");
+});

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+import { readNeighbours, storeNeighbours } from "./neighbor-storage.js";
 import { creationProseParent } from "./creation-extent.js";
 import { deriveFlowRegions } from "./flow-placement.js";
 // Historical text partition order is independent of current paragraph/list
@@ -186,10 +187,14 @@ export function executeFlowBoundary(state, intent, action, host, ordinary) {
         parent: hostNode.id,
         after: hostNode.children[at - 1] ?? null,
         before: hostNode.children[at + 1] ?? null,
-        neighbours: {
-          preceding: hostNode.children.slice(0, at),
-          following: hostNode.children.slice(at + 1),
-        },
+        neighbours: storeNeighbours(
+          state,
+          {
+            preceding: hostNode.children.slice(0, at),
+            following: hostNode.children.slice(at + 1),
+          },
+          write,
+        ),
         ...(ownedLeft
           ? {
               wrapper: structuredClone(leftOwner),
@@ -218,6 +223,9 @@ export function executeFlowBoundary(state, intent, action, host, ordinary) {
       // may disappear through independent Undo; live moved peers are a conflict.
       // A restored cut in the same text lineage can supply the left boundary.
       const place = cut.separatedPlacement,
+        neighbours = place.neighbours
+          ? readNeighbours(state, place.neighbours)
+          : null,
         owner = node(place.parent),
         liveNeighbours = (ids) =>
           ids.filter((id) => {
@@ -227,10 +235,10 @@ export function executeFlowBoundary(state, intent, action, host, ordinary) {
             return true;
           }),
         after = place.neighbours
-          ? (liveNeighbours(place.neighbours.preceding).at(-1) ?? null)
+          ? (liveNeighbours(neighbours.preceding).at(-1) ?? null)
           : place.after,
         before = place.neighbours
-          ? (liveNeighbours(place.neighbours.following)[0] ?? null)
+          ? (liveNeighbours(neighbours.following)[0] ?? null)
           : place.before,
         originalAt =
           before === null

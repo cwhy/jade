@@ -308,3 +308,24 @@ Next is a private immutable shared-neighbor store with strict decode/reference
 validation, old-array migration and unchanged restoration semantics. Re-run the
 ownership suite and measure accumulated size and command costs before release
 fencing. Reclamation and heap claims require separate evidence.
+
+
+## November 14: shared neighbor storage implemented
+
+`neighbor-storage.js` now interns immutable end-aligned chunks of at most 64
+node IDs in optional `neighborChunks`. Placement witnesses carry version 1 chunk
+references. Copy-on-write staging preserves prior states. Decoding reconstructs
+the exact ordered IDs; existing restoration rules are unchanged. Validation checks
+all chunks and expanded witnesses. No trusted persisted validation flag is used.
+Legacy arrays remain readable; fresh capture writes the shared representation.
+This lazy compatibility is not wire/codec fencing: old clients must not receive
+new records before explicit release migration is qualified. Chunk GC is deferred.
+
+The unchanged 30-cycle/1,000-filler probe now stores 37,512 witness bytes versus
+778,513 baseline; total state falls from 1,601,202 to 860,192 JSON bytes. These are
+not heap figures. A faster single profiled cycle does not establish a speedup.
+Validation still expands witnesses; that cost remains measurable.
+
+59 focused cases and 31 internal + 3,447 package contracts / 84 roots pass
+(`verify-8cRwUN`). Added checks cover malformed pools/references, unsupported
+versions, unknown nodes and legacy Undo/Redo/recapture. No app changes or release.
