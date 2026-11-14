@@ -435,3 +435,32 @@ for (const type of ["code", "bullet_list"])
         r.accept(undo("A", 2, "A:s:1"));
         assert.deepEqual(view(r.state), view(fixture()));
       });
+
+for (const type of ["code", "bullet_list"])
+  for (const imageFirst of [false, true])
+    test(`repeated independent image/paste ownership ${type} imageFirst=${imageFirst}`, () => {
+      const r = durable(),
+        initial = view(r.state),
+        atoms = text(r.state, "target");
+      for (let cycle = 1; cycle <= 5; cycle++) {
+        const a = `image${cycle}`,
+          b = `paste${cycle}`;
+        const plan = planInsertBlock(
+          r.state,
+          point(r.state, "target", 10),
+          op(a, 1),
+          {
+            type: "image",
+            slot: `repeated-slot-${cycle}-0001`,
+            width: 320,
+            height: 180,
+          },
+        );
+        r.accept(op(a, 1, plan.intent));
+        r.accept(paste(r.state, `${a}:s:1:cut:list-tail`, 3, type, b, 1));
+        for (const actor of imageFirst ? [a, b] : [b, a])
+          r.accept(undo(actor, 2, `${actor}:s:1`));
+        assert.deepEqual(view(r.state), initial);
+        assert.deepEqual(text(r.state, "target"), atoms);
+      }
+    });

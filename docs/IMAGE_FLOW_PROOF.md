@@ -288,3 +288,23 @@ bytes of neighbor IDs for one cross-region Undo. This is serialized metadata,
 not heap usage. Timing is noisy and ordinary-prose controls also grow with node
 count; it is not a performance gate. Accumulated cuts, broader independent Undo
 orders, compatibility fencing and app/browser integration remain open.
+
+
+## November 14: accumulation profile and representation experiment
+
+Four repeated-ownership schedules add five code/bullet insertion cycles under
+both Undo orders. The focused family has 58 cases; `verify-LIIT8F` passes
+31 internal + 3,446 packaged contracts across 84 roots. Runtime is unchanged.
+
+A local 30-cycle image/code-paste/Undo probe with 1,000 same-cell fillers retains
+60 neighbor records: 778,513 serialized bytes within 1,601,202 state bytes.
+Losslessly interning whole arrays gives 403,588 bytes; end-aligned chunks of up
+to 64 IDs give 33,452 bytes. JSON roundtrip reconstruction preserves every ordered
+reference. This is an offline encoding experiment, not integrated runtime storage.
+The whole-harness CPU profile includes assertions/serialization; cloning and
+structural validation are prominent, but no causal runtime speedup is established.
+
+Next is a private immutable shared-neighbor store with strict decode/reference
+validation, old-array migration and unchanged restoration semantics. Re-run the
+ownership suite and measure accumulated size and command costs before release
+fencing. Reclamation and heap claims require separate evidence.
