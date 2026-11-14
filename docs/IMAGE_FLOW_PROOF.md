@@ -271,3 +271,20 @@ Further insertion into a materialized domain, broader mixed-domain combinations,
 performance, compatibility fencing and app integration remain open. The persisted
 `materialized` flag and separated-cut `neighbours` need explicit compatibility
 handling before release. Baseline version labels remain proof-harness labels.
+
+
+## November 14: subsequent image insertion
+
+Sixteen additional sequences insert another image after code/bullet paste, at
+start or middle of surrounding numbered items and the plain suffix. Cell-level
+placement and concatenated text are preserved. Undo/Redo, exact restored atoms,
+duplicate decisions, JSON reload and replay pass. No runtime patch was needed.
+The rich-caret family now has 54 cases. Package verifier `verify-zDeL8d` passes
+31 internal + 3,442 contracts / 84 roots; subsequent test-only placement/text
+assertions also pass the focused suite.
+
+A local five-sample Node probe with 1,000 sibling paragraphs retains 12,993 JSON
+bytes of neighbor IDs for one cross-region Undo. This is serialized metadata,
+not heap usage. Timing is noisy and ordinary-prose controls also grow with node
+count; it is not a performance gate. Accumulated cuts, broader independent Undo
+orders, compatibility fencing and app/browser integration remain open.

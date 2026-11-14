@@ -388,3 +388,50 @@ for (const offset of [0, 6])
     r.accept(undo("C", 3, "C:s:2"));
     assert.deepEqual(images(r.state), before);
   });
+
+for (const type of ["code", "bullet_list"])
+  for (const block of ["before", "target", "after", suffix])
+    for (const offset of [0, 1])
+      test(`subsequent image after rich paste ${type} ${block} offset=${offset}`, () => {
+        const r = durable();
+        insert(r, 10);
+        r.accept(paste(r.state, suffix, 3, type));
+        const before = visibleTree(r.state, r.state.nodes.cell.children);
+        const atoms = text(r.state, block);
+        const planned = planInsertBlock(
+          r.state,
+          point(r.state, block, offset),
+          op("C", 1),
+          {
+            type: "image",
+            slot: "subsequent-image-slot-0001",
+            width: 320,
+            height: 180,
+          },
+        );
+        r.accept(op("C", 1, planned.intent));
+        assert.equal(r.state.nodes["C:s:1:image"].live, true);
+        assert.ok(r.state.nodes.cell.children.includes("C:s:1:image"));
+        const prose = (nodes) =>
+          nodes.map((n) => n.text ?? prose(n.children || [])).join("");
+        assert.equal(
+          prose(visibleTree(r.state, r.state.nodes.cell.children)),
+          prose(before),
+        );
+        const inserted = visibleTree(r.state, r.state.nodes.cell.children);
+        r.accept(undo("C", 2, "C:s:1"));
+        assert.deepEqual(
+          visibleTree(r.state, r.state.nodes.cell.children),
+          before,
+        );
+        assert.deepEqual(text(r.state, block), atoms);
+        r.accept(undo("C", 3, "C:s:2"));
+        assert.deepEqual(
+          visibleTree(r.state, r.state.nodes.cell.children),
+          inserted,
+        );
+        r.accept(undo("C", 4, "C:s:3"));
+        r.accept(undo("B", 2, "B:s:1"));
+        r.accept(undo("A", 2, "A:s:1"));
+        assert.deepEqual(view(r.state), view(fixture()));
+      });
