@@ -1,3 +1,14 @@
+# Alpha.10 checkpoint — November 15, 2026
+
+The prepared-paste host API accepts explicit `text/plain` strings through ordinary
+replacement, including code-block carets. Newlines remain inside code; markup is
+literal and marks are not inherited. Host authentication and review remain outside
+the engine. Wire50 and codec44 are unchanged.
+
+31 internal checks and 3,559 packaged contracts pass. Browser qualification of the
+new host path is tracked in the consuming application's reviewed-recovery tests;
+the standalone contract count does not include browser interaction tests.
+
 # Alpha.9 checkpoint — November 14, 2026
 
 Pending media can be part of one rich paste in document bodies, rich cells and

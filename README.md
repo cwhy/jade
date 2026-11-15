@@ -2,7 +2,15 @@
 
 **just-a-doc-engine** — an experimental rich-document editing engine.
 
-Current **alpha.9 / wire50 / codec44** adds pending image slots inside rich body,
+Current **alpha.10 / wire50 / codec44** adds explicit literal prepared text:
+`pastePrepared({mime: "text/plain", fragment: text}, bookmark, {onCommit})`.
+A host can insert reviewed text through normal replacement and Undo, including
+code blocks inside cells. Newlines stay literal in code; markup is not parsed and
+formatting is not inherited. Structural selections, stale client bookmarks and
+active composition reject insertion. Host access checks remain the host's duty.
+Wire and storage formats are unchanged.
+
+**Alpha.9 / wire50 / codec44** added pending image slots inside rich body,
 list-item and reviewed cell pastes. A fragment image uses either a completed
 `asset` reference or `{slot, width, height}` with optional alt/display width;
 slots are unique and at most 16 may be pending in one paste. The host resolves

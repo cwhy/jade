@@ -1123,7 +1123,16 @@ export function bindSelectionController({
           throw new ReviewRequired("Paste destination is no longer available");
         typingStyle.clear();
         plainPaste = false;
-        if (bookmark.range.kind === "cells") {
+        if (mime === "text/plain") {
+          if (typeof fragment !== "string" || fragment.length > MAX_CLIPBOARD_PAYLOAD)
+            throw new ReviewRequired("Prepared text is invalid or too large");
+          if (bookmark.range.kind)
+            throw new ReviewRequired("Prepared text requires a text selection");
+          // Explicit host-reviewed text: no markup parsing or inherited marks.
+          // Use ordinary replacement so code keeps newlines in one replica.
+          replace(plainFragment(fragment), bookmark.range, true, [], true);
+          try { onCommit?.(); } catch { notice("Paste inserted; its follow-up action failed."); }
+        } else if (bookmark.range.kind === "cells") {
           const grid = mime === SLICE_MIME
             ? {version:1, rows:[[validateRichSlice(fragment).blocks]]}
             : mime === GRID_MIME ? validateGridFragment(fragment) : null;
