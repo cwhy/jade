@@ -11,24 +11,27 @@ export function selectionStructure(state) {
   if (cached) return cached;
   const order = [],
     positions = new Map(),
+    fields = new Set(),
     parents = new Map(),
     visited = new Set();
-  function walk(id, parent) {
+  function walk(id, parent, field=false) {
     const node = state.nodes[id];
     if (!node?.live || visited.has(id))
       throw Error("Selection structure is unavailable");
     visited.add(id);
     parents.set(id, parent);
     if (node.text) {
-      positions.set(id, order.length);
-      order.push(id);
+      if(field){fields.add(id);positions.set(id,-fields.size);}
+      else {positions.set(id, order.length);order.push(id);}
     }
+    if(id===state.root)for(const field of Object.values(node.fields||{}))walk(field,node,true);
     for (const child of node.children || []) walk(child, node);
   }
   walk(state.root, undefined);
   const value = Object.freeze({
     order: Object.freeze(order),
     position: (id) => positions.get(id),
+    isField: (id) => fields.has(id),
     parent: (id) => parents.get(id),
   });
   if (stable) {

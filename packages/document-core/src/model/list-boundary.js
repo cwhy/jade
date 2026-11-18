@@ -85,8 +85,8 @@ import { concatPieces, slicePieces } from "../text/pieces.js";
 const isList = (n) => ["bullet_list", "ordered_list"].includes(n?.type);
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 function projectListBoundary(state, intent, action, host) {
-  const { parent, resolve, fail, write, remember, repartition } = host;
-  if (needsFlow(state, intent, parent, resolve))
+  const { resolve, fail, write, remember, repartition } = host;
+  if (needsFlow(state, intent, host.parent, resolve))
     return executeFlowBoundary(
       state,
       intent,
@@ -94,6 +94,18 @@ function projectListBoundary(state, intent, action, host) {
       host,
       executeListBoundary,
     );
+  // All parent queries below precede topology publication. Build one read-only
+  // index for this projection instead of rescanning the whole forest per sibling.
+  // It never escapes this invocation or participates in a nested flow projection.
+  let parents;
+  const parent = (id) => {
+    if (!parents) {
+      parents = new Map();
+      for (const node of Object.values(state.nodes))
+        if (node.live) for (const child of node.children || []) parents.set(child, node.id);
+    }
+    return state.nodes[parents.get(id)];
+  };
   const node = (id) => {
     const n = state.nodes[id];
     if (!n?.live) throw fail("List partition target is unavailable");
@@ -339,6 +351,7 @@ function projectListBoundary(state, intent, action, host) {
     homePart = family.order
       .slice(0, homeIndex)
       .filter((id) => family.cuts[id]?.active).length;
+  const activeIndex = new Map(active.map((id, index) => [id, index]));
   const offsets = active.map((id) => absolute(family.cuts[id].marker));
   if (offsets.some((x, i) => x < 0 || x > total || (i && x < offsets[i - 1])))
     throw fail("List boundary order changed");
@@ -367,14 +380,15 @@ function projectListBoundary(state, intent, action, host) {
   // Inactive cuts become ordinary retained positions until reactivation.
   for (const c of Object.values(family.cuts)) {
     const { edge, ...marker } = state.boundaries[c.marker];
-    const index = active.indexOf(c.id);
+    const index = activeIndex.get(c.id) ?? -1;
     write("boundaries")[c.marker] =
       index < 0
         ? marker
         : { ...marker, block: blocks[index + 1], offset: 0, edge: "start" };
   }
+  const blockSet = new Set(blocks);
   for (const block of layout.blocks)
-    if (!blocks.includes(block)) set(block, { live: false });
+    if (!blockSet.has(block)) set(block, { live: false });
   if (prose) {
     // Rewrite only family members, preserving every interleaved sibling at its
     // existing slot. New cuts belong immediately after their preceding member.
@@ -415,7 +429,7 @@ function projectListBoundary(state, intent, action, host) {
       (i < homePart ? before : after).push(id);
     }
     for (const c of Object.values(family.cuts))
-      if (!active.includes(c.id) && state.nodes[c.wrapper])
+      if (!activeIndex.has(c.id) && state.nodes[c.wrapper])
         set(c.wrapper, { live: false, children: [] });
     const parentItems = [
       ...before,

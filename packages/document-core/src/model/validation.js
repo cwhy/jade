@@ -16,6 +16,7 @@ const forests = new WeakMap(),
   replicasChecked = new WeakMap(),
   certified = new WeakMap();
 const dependencies = [
+  "replacementOrigins",
   "neighborChunks",
   "textClaims",
   "textMasks",
@@ -58,6 +59,8 @@ function forest(nodes, root) {
     if (n.type === "list_item" && nodes[n.children?.[0]]?.type !== "paragraph")
       throw Error("List item has no first paragraph");
     if (n.text) texts.push(n);
+    if (id === root)
+      for (const field of Object.values(n.fields || {})) walk(field, [n.type]);
     for (const child of n.children || []) walk(child, [...ancestors, n.type]);
   }
   walk(root);
@@ -163,6 +166,7 @@ export function validateChanged(state, full) {
     dependencies.some((key) => certificate[key] !== base[key]) ||
     state.nodes !== base.nodes ||
     state.neighborChunks !== base.neighborChunks ||
+    state.replacementOrigins !== base.replacementOrigins ||
     state.root !== base.root ||
     state.storageCodec !== STORAGE_CODEC ||
     !forests.get(base.nodes)?.has(base.root)

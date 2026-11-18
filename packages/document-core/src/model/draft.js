@@ -4,6 +4,7 @@ import { isImmutable } from "./immutable.js";
 // All mutations of these collections must go through writable()/erase().
 const drafts = new WeakMap();
 const fields = new Set([
+  "replacementOrigins",
   "neighborChunks",
   "pendingMedia",
   "imageFlows",
@@ -25,7 +26,7 @@ const fields = new Set([
   "listJoins",
   "joinProjection",
 ]);
-export function stage(state) {
+export function stage(state, modelVersion = 1) {
   const next = { ...state, formats: state.formats || {} };
   const copied = new Set();
   // A mutable decoded/input state has no safe sharing contract: retain the
@@ -33,7 +34,7 @@ export function stage(state) {
   if (!isImmutable(state))
     for (const field of fields) {
       if (
-        ["imageFlows", "neighborChunks"].includes(field) &&
+        ["imageFlows", "neighborChunks", "replacementOrigins"].includes(field) &&
         state[field] === undefined
       )
         continue;
@@ -42,7 +43,7 @@ export function stage(state) {
         : { ...state[field] };
       copied.add(field);
     }
-  drafts.set(next, { base: state, copied });
+  drafts.set(next, { base: state, copied, modelVersion });
   return next;
 }
 // Published checkpoints must not retain a predecessor chain through this map.
@@ -80,3 +81,7 @@ export function unchangedOwnershipSource(state) {
 export function predecessor(state) {
   return drafts.get(state)?.base;
 }
+
+// Identity for transaction-scoped derived caches. finish() releases this token;
+// cache entries must not retain it or the mutable state wrapper.
+export function stagingToken(state) { return drafts.get(state); }

@@ -6,13 +6,16 @@ const clone = (x) => structuredClone(x);
 const fingerprint = (x) => JSON.stringify(x);
 export class Client {
   #history;
-  constructor(actor, stream, room, saved) {
+  constructor(actor, stream, room, saved, options = {}) {
     this.actor = actor;
     this.stream = stream;
     this.seq = saved?.seq || 0;
     this.inflight = clone(saved?.inflight || null);
     this.base = immutable(upgradeRecord(saved?.base ? clone(saved.base) : room));
     this.pending = clone(saved?.pending || []);
+    this.deferred = new Set(saved?.deferred || []);
+    if([...this.deferred].some(id=>!this.pending.some(op=>op.id===id)))throw Error("Invalid deferred queue");
+    this.deferMutation = options.deferMutation || (()=>false);
     this.undoStack = this.pending.map((x) => ({ ids: [x.id], group: null }));
     this.redoStack = [];
     this.recovery = [];
@@ -62,6 +65,7 @@ export class Client {
   rebuild() {
     this.state = this.base.state;
     for (const op of this.pending) {
+      if(this.deferred.has(op.id))continue;
       try {
         this.state = immutable(apply(this.state, op));
       } catch (e) {
@@ -70,17 +74,22 @@ export class Client {
       }
     }
   }
+  get awaitingDecision() { return this.deferred.size>0; }
   prepare(intent, history = true, group = null) {
+    if(this.awaitingDecision)throw new Conflict("Wait for the pending operation to finish");
     const op = {
       id: `${this.actor}:${this.stream}:${this.seq + 1}`,
       actor: this.actor,
       stream: this.stream,
       seq: this.seq + 1,
       epoch: this.state.epoch,
+      modelVersion: 2,
       intent: clone(intent),
     };
     // Check before allocating a sequence; a local validation error creates no hole.
-    const next = apply(this.state, op);
+    const defer=!!this.deferMutation(intent,this.state);
+    const next = defer?this.state:apply(this.state, op);
+    if(defer)this.deferred.add(op.id);
     this.seq++;
     this.pending.push(op);
     this.state = immutable(next);
@@ -107,10 +116,22 @@ export class Client {
           this.recovery.push({ id: op.id, reason: receipt.reason });
         rejected = true;
       }
+      this.deferred.delete(op.id);
       return false;
     });
     this.rebuild();
     if (rejected) this.#reconcileHistory();
+  }
+  // A reviewed conditional command may fail normally. The host may acknowledge
+  // that terminal outcome only with no later allocated edits or unresolved queue;
+  // it must never silently release a rejected branch containing dependent work.
+  acknowledgeRejection(id) {
+    const receipt=this.base.receipts[id];
+    if(receipt?.outcome!=='rejected'||!this.recovery.some(r=>r.id===id)||this.pending.length)return false;
+    const op=JSON.parse(receipt.bytes);
+    if(op.actor!==this.actor||op.stream!==this.stream||op.seq!==this.seq)return false;
+    this.recovery=this.recovery.filter(r=>r.id!==id);
+    return true;
   }
   undo() {
     const target = this.undoStack.at(-1);
@@ -139,6 +160,7 @@ export class Client {
       base: this.base,
       pending: this.pending,
       inflight: this.inflight,
+      ...(this.deferred.size?{deferred:[...this.deferred]}:{}),
     });
   }
 }

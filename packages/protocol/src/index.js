@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
-// Experimental wire version, separate from package SemVer and codec 44.
-export const WIRE_VERSION = 50;
+// Experimental wire version, separate from package SemVer and codec 46.
+export const WIRE_VERSION = 52;
 export function envelope(op, actor) {
   if (
     !op ||
@@ -11,6 +11,7 @@ export function envelope(op, actor) {
     op.seq < 1 ||
     op.id !== `${actor}:${op.stream}:${op.seq}` ||
     !Number.isSafeInteger(op.epoch) ||
+    (op.modelVersion !== undefined && ![1, 2].includes(op.modelVersion)) ||
     !op.intent ||
     typeof op.intent.kind !== "string"
   )

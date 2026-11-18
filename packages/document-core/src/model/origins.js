@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
+import {expandUndo} from './undo-storage.js';
+import {replacementAffiliation} from "./replacement-affiliation.js";
 import { members as erasureMembers } from "./boundaries.js";
 // Erasure metadata belongs to the retained operation, whether the next inverse
 // is held directly by history or by a lifecycle record referenced from history.
@@ -13,12 +15,18 @@ function scanOwnedInverses(state, visit) {
   for (const placement of Object.values(state.creationPlacements || {}))
     visit(placement.inverse);
 }
+// Snapshot only origin-bearing inverse records during a pure insertion pass.
+// Stored histories are fixed until that pass finishes; live positions are not.
+export function ownedOriginInverses(state){
+ const records=[];function scan(i){if(i.kind==='batch')i.intents.forEach(scan);else if(i.kind==='delete'&&i.origin)records.push(expandUndo(i));}
+ scanOwnedInverses(state,scan);return records;
+}
 // Experimental codec 7: a displaced insertion retains its erased source gap.
 // Effects already retain insertion identities; compact origin metadata follows
 // that same Undo lifetime. No current DOM offset becomes a restoration identity.
 export function insertionOrigin(state, intent) {
   const g = intent.at;
-  if (g?.codec !== 2 || (!state.deleted[g.left] && !state.deleted[g.right]))
+  if (g?.codec !== 2 || (!state.deleted[g.left] && !state.deleted[g.right] && !replacementAffiliation(state,g)))
     return null;
   return {
     text: g.text,
@@ -33,7 +41,7 @@ export function restorationParts(
   intent,
   action,
   parts,
-  { atoms, locations, remember, conflict },
+  { atoms, locations, remember, conflict, originInverses },
 ) {
   const erased = atoms(intent.pieces),
     offsets = new Map(erased.map((a, i) => [a.id, i])),
@@ -42,6 +50,7 @@ export function restorationParts(
   function scan(inverse) {
     if (inverse.kind === "batch") for (const i of inverse.intents) scan(i);
     if (inverse.kind !== "delete" || !inverse.origin) return;
+    inverse=expandUndo(inverse);
     const o = inverse.origin,
       at = erasedOffset(offsets, o, erased.length, state, intent.erasure);
     if (at === null) return; // Interior or exact edge of this erased run.
@@ -61,7 +70,7 @@ export function restorationParts(
       after: Math.max(...live.map((p) => p.offset)) + 1,
     });
   }
-  scanOwnedInverses(state, scan);
+  if(originInverses)originInverses.forEach(scan);else scanOwnedInverses(state, scan);
   if (!origins.length) return parts;
   const expanded = [];
   for (let i = 0; i < parts.length; i++) {
@@ -117,8 +126,15 @@ export function restorationParts(
 
 // Several offline inserts can collapse onto one visible gap. Preserve their
 // source ordering there, so later restoration never has to guess from arrival order.
-export function originPlacement(state, origin, fallback, { atoms, locations }) {
+export function originPlacement(state, origin, fallback, { atoms, locations, resolve }) {
   if (!origin) return fallback;
+  const affiliation=replacementAffiliation(state,origin);
+  if(affiliation){
+    // Preserve the exact live caret inside the replacement. The source-edge
+    // mapping is only for restoration, not permission to move normal typing.
+    if(locations.has(affiliation.left)||locations.has(affiliation.right))return fallback;
+    fallback=resolve(affiliation.source);
+  }
   const records = [];
   function scan(i) {
     if (i.kind === "batch") i.intents.forEach(scan);
@@ -143,7 +159,7 @@ export function originPlacement(state, origin, fallback, { atoms, locations }) {
         erased.erasure,
       );
       if (pos === null) continue;
-      const live = record.ids.map((id) => locations.get(id)).filter(Boolean);
+      const live = expandUndo(record).ids.map((id) => locations.get(id)).filter(Boolean);
       if (!live.length || live.some((p) => p.block !== fallback.block))
         continue;
       candidates.push({
@@ -165,7 +181,7 @@ export function originPlacement(state, origin, fallback, { atoms, locations }) {
 }
 
 // A gap at an erased run's edge is as meaningful as one in its interior.
-function erasedOffset(offsets, g, size, state = null, erasure = null) {
+function erasedOffset(offsets, g, size, state = null, erasure = null, seen = new Set()) {
   const left = offsets.get(g.left),
     right = offsets.get(g.right);
   if (left !== undefined && right === left + 1) return right;
@@ -187,6 +203,11 @@ function erasedOffset(offsets, g, size, state = null, erasure = null) {
           return at;
       }
     }
+  }
+  const affiliation=state&&replacementAffiliation(state,g);
+  if(affiliation&&!seen.has(affiliation.run)){
+    seen.add(affiliation.run);
+    return erasedOffset(offsets,affiliation.source,size,state,erasure,seen);
   }
   return null;
 }
@@ -218,7 +239,7 @@ export function erasedGapPlacement(state, g, { atoms }) {
 
 // At a restored erased offset, a cut and an offline contribution can coincide.
 // Restore their accepted side relationship, not just the cut's numeric offset.
-export function restoredCutOffsets(state, pieces, block, { atoms, locations }) {
+export function restoredCutOffsets(state, pieces, block, { atoms, locations, originInverses }) {
   const erased = atoms(pieces),
     ordinals = new Map(erased.map((a, i) => [a.id, i])),
     byMarker = new Map();
@@ -231,13 +252,14 @@ export function restoredCutOffsets(state, pieces, block, { atoms, locations }) {
       return;
     }
     if (i.kind !== "delete" || !i.origin?.listAffinity) return;
+    i=expandUndo(i);
     for (const [marker, side] of Object.entries(i.origin.listAffinity)) {
       if (!side) continue;
       if (!byMarker.has(marker)) byMarker.set(marker, []);
       byMarker.get(marker).push({ inverse: i, side });
     }
   }
-  scanOwnedInverses(state, scan);
+  if(originInverses)originInverses.forEach(scan);else scanOwnedInverses(state, scan);
   return (marker, offset, fallback) => {
     let left = -Infinity,
       right = Infinity;

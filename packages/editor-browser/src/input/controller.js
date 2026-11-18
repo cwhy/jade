@@ -228,6 +228,7 @@ export function bindSelectionController({
       id: `${c.actor}:${c.stream}:${c.seq + 1}`,
       actor: c.actor,
       epoch: c.state.epoch,
+      modelVersion: 2,
     };
     if (range?.kind && range.kind !== allowedKind)
       throw new ReviewRequired(

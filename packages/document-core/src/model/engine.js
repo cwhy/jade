@@ -1,5 +1,10 @@
+import {insertionContext} from './insertion-context.js';
+import {compactUndo,expandUndo,validateUndoStorage,replacementUndo} from './undo-storage.js';
 // SPDX-License-Identifier: MPL-2.0
 import {executeImageBatch} from './image-batch.js';
+import {validateReplacementOrigins} from './replacement-affiliation.js';
+import {prepareTextReplacement} from './text-replacement.js';
+import {fieldEntries,validateTextFields,validateFieldTransition,executeFieldCreate} from './text-fields.js';
 import {STORAGE_CODEC} from "./codec.js";
 import {validateNeighborStorage} from "./neighbor-storage.js";
 import {executeImageFlow,suspendImageFlow,projectImageFlow,validateImageFlowState,canReuseImageFlow,imageFlowPresenceBoundary} from './image-flow.js';
@@ -91,7 +96,7 @@ import {
   validateJoins,
   canReuseJoinProjection,
 } from "./join-ledger.js";
-import { listGapAffinities } from "./list-affinity.js";
+import { listGapAffinities, listGapAffinityReader } from "./list-affinity.js";
 import { validateListFamilies } from "./list-validation.js";
 // Paragraph/list partition operations share the current document codec.
 import { executeListBoundary, executeListHold } from "./list-boundary.js";
@@ -119,10 +124,11 @@ import {
   repartitionBoundaries,
   insertAtBoundaries,
   deleteAtBoundaries,
+  deletionBoundaryContext,
   validateBoundaries,
 } from "./boundaries.js";
 import { locations as locateAtoms } from "./locations.js";
-import { stage, finish, writable, erase } from "./draft.js";
+import { stage, finish, writable, erase, stagingToken } from "./draft.js";
 import {
   contribute,
   activate,
@@ -173,13 +179,13 @@ export function index(state) {
   }
   return atoms;
 }
-export function gapAt(state, block, offset, affinity = "right") {
+export function gapAt(state, block, offset, affinity = "right", affinityReader = null) {
   const n = requireText(state, block),
     replica = state.replicas[n.text],
     pieces = replica.pieces;
   if (!Number.isInteger(offset) || offset < 0 || offset > replica.length)
     throw Error("Invalid character offset");
-  const listAffinity = listGapAffinities(state, block, offset);
+  const listAffinity = affinityReader ? affinityReader(block,offset) : listGapAffinities(state, block, offset);
   if (replica.length === 0)
     return { codec: 3, boundary: `${n.text}:empty`, ...listAffinity };
   const before = slicePieces(pieces, 0, offset),
@@ -197,7 +203,7 @@ export function gapAt(state, block, offset, affinity = "right") {
     after,
   };
 }
-export function resolveGap(state, gap) {
+export function resolveGap(state, gap, knownLocations) {
   if (gap.codec === 3) {
     const cut = state.boundaries?.[gap.boundary];
     if (!cut) throw new Conflict("Unknown structural boundary");
@@ -205,7 +211,7 @@ export function resolveGap(state, gap) {
     return { block: cut.block, offset: cut.offset };
   }
   if (gap.codec !== 2) throw new Conflict("Incompatible gap codec");
-  const locations = locateAtoms(state),
+  const locations = knownLocations || locateAtoms(state),
     source = state.replicas[gap.text];
   if (!source || source.generation !== gap.generation)
     throw new Conflict("Unknown text generation");
@@ -289,7 +295,26 @@ function repartition(
 ) {
   const sources = sourceBlocks.map((id) => requireText(state, id));
   repartitionBoundaries(state, sourceBlocks, destinations, splitCut, listCuts);
-  for (const source of sources)
+  // A versioned operation may preserve exact, unchanged partitions. Legacy
+  // unversioned logs still create every historical generation they originally
+  // named. No retired replica or prior lineage is discarded by this path.
+  const unchanged = new Set();
+  if (!materialization && stagingToken(state)?.modelVersion === 2) {
+    const byBlock = new Map(sources.map((n, i) => [n.id, {node:n, index:i}]));
+    for (const [index, d] of destinations.entries()) {
+      const entry = byBlock.get(d.block), source = entry?.node, prior = source && state.replicas[source.text];
+      // Equal text alone is insufficient: empty/end cuts still change a
+      // paragraph's structural boundary. Rotate the affected neighbours too.
+      const sameNeighbours = entry &&
+        sources[entry.index - 1]?.id === destinations[index - 1]?.block &&
+        sources[entry.index + 1]?.id === destinations[index + 1]?.block;
+      if (sameNeighbours && prior && !prior.retired && prior.owner === d.block &&
+          prior.pieces.length === d.pieces.length && prior.pieces.every((p, i) =>
+            p.run === d.pieces[i].run && p.from === d.pieces[i].from && p.length === d.pieces[i].length)) unchanged.add(d.block);
+    }
+  }
+  const changedSources = sources.filter(n => !unchanged.has(n.id));
+  for (const source of changedSources)
     writable(state, "replicas")[source.text] = {
       ...state.replicas[source.text],
       retired: true,
@@ -321,6 +346,7 @@ function repartition(
   }
   const targets = [];
   for (const d of destinations) {
+    if (unchanged.has(d.block)) continue;
     // Concurrent cuts can change the number/order of destinations. Replica
     // identity must follow the stable destination block, not its array index.
     const textId = "partition:" + JSON.stringify([action, d.block]);
@@ -343,7 +369,7 @@ function repartition(
   }
   writable(state, "lineage").push({
     action,
-    sources: sources.map((n) => n.text),
+    sources: changedSources.map((n) => n.text),
     targets,
   });
 }
@@ -503,13 +529,14 @@ function join(state, intent, action, materialization = null) {
       : {}),
   };
 }
-function insert(state, intent, action) {
-  if (intent.erasure) return restoreErasure(state, intent, action);
-  const seen = locateAtoms(state);
+function insert(state, intent, action, context = null) {
+  if (intent.erasure) return restoreErasure(state, intent, action, context);
+  const seen = context?.locations() || locateAtoms(state);
   let origin = insertionOrigin(state, intent);
-  const at = originPlacement(state, origin, resolveGap(state, intent.at), {
+  const at = originPlacement(state, origin, resolveGap(state, intent.at, seen), {
       atoms: (p) => readPieces(state.runs, p),
       locations: seen,
+      resolve:gap=>resolveGap(state,gap),
     }),
     n = requireText(state, at.block);
   if (origin)
@@ -546,7 +573,9 @@ function insert(state, intent, action) {
     atoms.length,
     intent.at,
     !!intent.restore,
+    context,
   );
+  context?.update(n.id);
   for (const atom of atoms) erase(state, "deleted", atom.id);
   return {
     kind: "delete",
@@ -557,7 +586,7 @@ function insert(state, intent, action) {
 // A deleted run has one durable start marker and ordered cut affiliations.
 // Restoration follows the cuts' current owners, rather than placing the entire
 // run in whichever paragraph happens to contain a surviving neighbour.
-function restoreErasure(state, intent, action) {
+function restoreErasure(state, intent, action, context = null) {
   const start = state.boundaries[intent.at.boundary],
     pieces = intent.pieces;
   if (!start) throw new Conflict("Missing deletion start");
@@ -573,7 +602,8 @@ function restoreErasure(state, intent, action) {
       parts.push(cut);
   parts = restorationParts(state, intent, action, parts, {
     atoms: (p) => readPieces(state.runs, p),
-    locations: locateAtoms(state),
+    locations: context?.locations() || locateAtoms(state),
+    originInverses: context?.originInverses,
     remember: (id, block, offset) => rememberBoundary(state, id, block, offset),
     conflict: (message) => new Conflict(message),
   });
@@ -601,6 +631,7 @@ function restoreErasure(state, intent, action) {
         restore: intent.restore,
       },
       action,
+      context,
     );
     ids.push(...inverse.ids);
     // Only markers still at this collapsed gap need their erased offsets
@@ -608,7 +639,8 @@ function restoreErasure(state, intent, action) {
     // to either side; stale membership must not pull it back into this span.
     const restoredOffset = restoredCutOffsets(state, pieces, part.block, {
       atoms: (p) => readPieces(state.runs, p),
-      locations: locateAtoms(state),
+      locations: context?.locations() || locateAtoms(state),
+    originInverses: context?.originInverses,
     });
     for (const [id, offset] of before)
       writable(state, "boundaries")[id] = {
@@ -620,6 +652,7 @@ function restoreErasure(state, intent, action) {
   return { kind: "delete", ids };
 }
 function remove(state, intent, action) {
+  const boundaries = deletionBoundaryContext(state);
   const locations = locateAtoms(state),
     groups = new Map(),
     restore = [];
@@ -666,6 +699,7 @@ function remove(state, intent, action) {
         run[0].offset,
         run.length,
         erasures.get(run),
+        boundaries,
       );
     }
     writable(state, "replicas")[n.text] = replica;
@@ -674,13 +708,10 @@ function remove(state, intent, action) {
     // Preserve that side for every coincident marker, not just this deletion's
     // start; an old Redo marker must not divert restored source characters.
     // Previously certified affinities remain authoritative across later Undo.
-    for (const [id, marker] of Object.entries(state.boundaries))
-      if (marker.block === block) {
-        const affinity = listGapAffinities(
-          state,
-          marker.block,
-          marker.offset,
-        ).listAffinity;
+    const affinityReader=listGapAffinityReader(state);
+    for (const id of boundaries.cuts(block)) {
+        const marker=state.boundaries[id];
+        const affinity = affinityReader(marker.block,marker.offset).listAffinity;
         if (affinity)
           writable(state, "boundaries")[id] = {
             ...marker,
@@ -745,6 +776,7 @@ function formatActive(state, intent) {
   return { ...intent, active: !intent.active };
 }
 function execute(state, intent, action, materialization = null) {
+  intent = expandUndo(intent);
   const imageHost={execute:(i,id)=>execute(state,i,id,materialization),write:f=>writable(state,f),resolveState:resolveGap,gapState:gapAt,fail:m=>new Conflict(m)};
   if(intent.kind==='imageBatch')return executeImageBatch(state,intent,action,imageHost);
   if(['imageListPlace','imageFlowActive'].includes(intent.kind))return executeImageFlow(state,intent,action,imageHost);
@@ -1011,28 +1043,42 @@ function execute(state, intent, action, materialization = null) {
     return split(state, intent, action, materialization);
   if (["join", "unsplitList"].includes(intent.kind))
     return join(state, intent, action, materialization);
-  if (intent.kind === "batch")
-    return {
-      kind: "batch",
-      intents: intent.intents
-        .map((part, i) =>
-          execute(state, part, `${action}:part:${i}`, materialization),
-        )
-        .reverse(),
-    };
+  if(intent.kind==='textFieldCreate')return executeFieldCreate(state,intent,action,{
+    write:field=>writable(state,field),replica:(id,owner)=>createReplica(id,owner,[],'field'),
+    boundary:(key,id)=>rememberBoundary(state,key,id,0),gap:id=>gapAt(state,id,0),
+    execute:(i,id)=>execute(state,i,id),fail:m=>new Conflict(m),
+  });
+  if (intent.kind === "batch") {
+    let context=null;
+    const inverses=intent.intents.map((part,i)=>{
+      const id=`${action}:part:${i}`;
+      if(part.kind==='insert'){
+        context ||= insertionContext(state);
+        return insert(state,part,id,context);
+      }
+      context=null;
+      return execute(state,part,id,materialization);
+    });
+    return {kind:'batch',intents:inverses.reverse()};
+  }
   throw new Error("Unsupported intent");
 }
 export function apply(state, op, validateFinalShape = null) {
   if (state.storageCodec !== STORAGE_CODEC)
     throw new Conflict("Incompatible storage codec");
+  if (op.modelVersion !== undefined && ![1, 2].includes(op.modelVersion)) throw new Conflict("Unsupported partition version");
+  const modelVersion = op.modelVersion ?? state.defaultModelVersion ?? 1;
+  if (![1, 2].includes(modelVersion)) throw new Conflict("Unsupported partition version");
   if (op.epoch !== state.epoch) throw new Conflict("Document epoch changed");
   function internal(i) {
     return (
+      !!i.idSpans ||
       !!i.revive ||
       !!i.origin ||
       !!i.erasure ||
       !!i.restore ||
       [
+        "textFieldSetup",
         "textClaimActive",
         "creationPlacementActive",
         "creationActive",
@@ -1130,17 +1176,20 @@ export function apply(state, op, validateFinalShape = null) {
       fail: (m) => new Conflict(m),
     });
   if(op.intent.kind === "imageResize") validateImageSize(state,op.intent,m=>new Conflict(m));
-  const next = stage(state);
+  const affinityReader=op.intent.kind==='textReplace'?listGapAffinityReader(state):null;
+  const replacement = op.intent.kind==='textReplace'?prepareTextReplacement(state,op.intent,{read:text,gap:(s,b,o)=>gapAt(s,b,o,'right',affinityReader),fail:m=>new Conflict(m)}):undefined;
+  if(replacement===null)return state;
+  const next = stage(state, modelVersion);
   const reuseImageFlow = canReuseImageFlow(state, op.intent, resolveGap);
   if (!reuseImageFlow) suspendImageFlow(next,field=>writable(next,field));
-  let intent = op.intent;
+  let intent = replacement?.intent ?? op.intent;
   if (intent.kind === "undo") {
     const ids = intent.targets || [intent.target];
     if (!ids.length || new Set(ids).size !== ids.length)
       throw new Conflict("Invalid Undo group");
     const inverses = ids.map((id) => {
       const target = state.effects[id];
-      if (target?.system) throw new Conflict("Upload completion is not a user Undo action");
+      if (target?.system) throw new Conflict(target.system==='textFieldCreate'?"Document field setup is not a user Undo action":"Upload completion is not a user Undo action");
       if (!target || target.actor !== op.actor)
         throw new Conflict("Undo belongs to another actor");
       if (Object.values(state.effects).some((e) => e.undoes?.includes(id)))
@@ -1169,6 +1218,7 @@ export function apply(state, op, validateFinalShape = null) {
     op.intent.kind !== "undo" &&
     beginCreationPlacement(next, intent, op.id, projectionHost);
   let inverse = execute(next, intent, op.id);
+  for(const {part,...entry} of replacement?.origins||[])writable(next,"replacementOrigins")[`${op.id}:part:${part}:char`]=entry;
   if (held)
     inverse = finishCreationPlacement(
       next,
@@ -1184,8 +1234,8 @@ export function apply(state, op, validateFinalShape = null) {
   fenceMedia(state,next,op.id,field=>writable(next,field));
   writable(next, "effects")[op.id] = {
     actor: op.actor,
-    ...(op.intent.kind==="imageComplete"?{system:true}:{}),
-    inverse,
+    ...(op.intent.kind==="imageComplete"?{system:true}:op.intent.kind==='textFieldCreate'?{system:'textFieldCreate'}:{}),
+    inverse: modelVersion === 2 ? compactUndo(op.intent.kind==='textReplace'?replacementUndo(inverse):inverse) : inverse,
     ...(op.intent.kind === "undo"
       ? { undoes: op.intent.targets || [op.intent.target] }
       : {}),
@@ -1200,12 +1250,17 @@ export function apply(state, op, validateFinalShape = null) {
     immutable(next.replicas);
     immutable(next.runs);
   }
+  try{validateFieldTransition(state,next,op.intent);validateTextFields(next,text);}catch(e){throw new Conflict(e.message);}
   if (validateFinalShape) validateFinalShape(next);
   validateChanged(next, validate);
   return finish(next);
 }
 const checkedRuns = new WeakSet();
 export function validate(state, incremental = false) {
+  if (state.defaultModelVersion !== undefined && ![1, 2].includes(state.defaultModelVersion)) throw Error("Invalid default partition version");
+  validateUndoStorage(state);
+  validateReplacementOrigins(state);
+  validateTextFields(state,text);
   validateNeighborStorage(state);
   validateImageFlowState(state,{resolveState:resolveGap,fail:m=>new Conflict(m)});
   validateTextClaims(state);
@@ -1232,6 +1287,7 @@ export function validate(state, incremental = false) {
     if (!n?.live || visited.has(id))
       throw new Error("Missing, repeated or cyclic node");
     visited.add(id);
+    if(id!==state.root&&n.fields!==undefined)throw Error("Text fields belong to the document root");
     if (n.type === "table" && ancestors.includes("cell"))
       throw new Error("Nested table");
     if (
@@ -1245,6 +1301,7 @@ export function validate(state, incremental = false) {
         throw new Error("Invalid live text owner");
       textOwners.add(r.id);
     }
+    if(id===state.root)for(const [,field] of fieldEntries(state))walk(field,[...ancestors,n.type]);
     for (const child of n.children || []) walk(child, [...ancestors, n.type]);
   }
   walk(state.root);
@@ -1299,6 +1356,7 @@ export function validate(state, incremental = false) {
 export function seed(nodes, contents, root = "doc") {
   const state = {
     storageCodec: STORAGE_CODEC,
+    defaultModelVersion: 2,
     pendingMedia: {},
     textClaims: {},
     textMasks: {},

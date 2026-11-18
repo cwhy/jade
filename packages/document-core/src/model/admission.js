@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
+import {validateTextReplacement} from './text-replacement.js';
+import {fieldEntries,validateFieldCreate} from './text-fields.js';
 import {validateImageBatch} from './image-batch.js';
 import {validateImageFlow} from './image-flow.js';
 import {validateImageSize,validateImageSizes} from './image-size.js';
@@ -63,14 +65,15 @@ export function validateDocumentShape(state) {
   validateImageSizes(state, fail);
   shapeCounts.walks++;
   const visited = new Set();
-  function walk(key, parent, inCell) {
+  function walk(key, parent, inCell, field=false) {
     const n = state.nodes[key];
     if (n?.live !== true || n.id !== key || visited.has(key))
       fail("missing, repeated or mismatched node");
     visited.add(key);
+    if(key!==state.root&&n.fields!==undefined)fail("Text fields belong to the document root");
     if (!parent && n.type !== "doc") fail("root must be a document");
     if (parent) {
-      const allowed = lists.has(parent.type)
+      const allowed = field ? parent.type==='doc'&&n.type==='text_field' : lists.has(parent.type)
         ? n.type === "list_item"
         : parent.type === "table"
           ? n.type === "row"
@@ -81,7 +84,7 @@ export function validateDocumentShape(state) {
       if (!allowed) fail("invalid child kind");
     }
     if (n.type === "table" && inCell) fail("nested table");
-    if (["paragraph", "code"].includes(n.type)) {
+    if (["paragraph", "code", "text_field"].includes(n.type)) {
       if (!id(n.text) || Object.hasOwn(n, "children")) fail("text block shape");
       return;
     }
@@ -116,6 +119,7 @@ export function validateDocumentShape(state) {
       if (!widths[0] || widths.some((width) => width !== widths[0]))
         fail("ragged table");
     }
+    if(key===state.root)for(const [,id] of fieldEntries(state))walk(id,n,false,true);
     for (const child of n.children) walk(child, n, inCell || n.type === "cell");
   }
   walk(state.root, null, false);
@@ -198,6 +202,12 @@ export function validatePublicIntent(
   if (intent.kind === "listEnter" && intent.marker !== undefined)
     validateMarkerType(intent.marker);
   switch (intent.kind) {
+    case 'textReplace':
+      if(inBatch)fail('Conditional replacement must be a complete operation');
+      try{validateTextReplacement(intent);}catch(e){fail(e.message);}return;
+    case 'textFieldCreate':
+      if(inBatch)fail('Document field setup must be a complete operation');
+      try{validateFieldCreate(state,intent);}catch(e){fail(e.message);}return;
     case "listNumbering":
       if (inBatch) fail("Numbering must be a complete operation");
       validateListNumbering(state, intent);

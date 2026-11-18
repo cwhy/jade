@@ -100,12 +100,14 @@ export function insertAtBoundaries(
   length,
   gap,
   restoration = false,
+  context = null,
 ) {
   const earlier =
     restoration && gap?.codec === 3
-      ? preceding(state, state.boundaries[gap.boundary])
+      ? context ? context.preceding(state.boundaries[gap.boundary]) : preceding(state, state.boundaries[gap.boundary])
       : new Set();
-  for (const [id, cut] of Object.entries(state.boundaries))
+  for (const id of context?context.cuts(block):Object.keys(state.boundaries)) {
+    const cut=state.boundaries[id];
     if (
       cut.block === block &&
       cut.offset >= at &&
@@ -120,20 +122,30 @@ export function insertAtBoundaries(
         ...cut,
         offset: cut.offset + length,
       };
+  }
 }
-export function deleteAtBoundaries(state, block, from, length, erasure) {
+// Reuse only inside one physical deletion pass: cuts can be appended and moved
+// in offset, but their block ownership is fixed until that pass ends.
+export function deletionBoundaryContext(state) {
+  let indexed=0;const blocks=new Map(),intern=new Map(state.cutLinks.map((link,id)=>[`${link.previous}/${link.ordinal}/${link.at}`,id]));
+  return {intern,cuts(block){
+    while(indexed<state.boundaryOrder.length){const id=state.boundaryOrder[indexed++],owner=state.boundaries[id].block;if(!blocks.has(owner))blocks.set(owner,[]);blocks.get(owner).push(id);}
+    return blocks.get(block)||[];
+  }};
+}
+export function deleteAtBoundaries(state, block, from, length, erasure, batch) {
   if (erasure && state.erasures[erasure])
     throw Error("Erasure identity reused");
   // This index is derived once per deletion, never persisted as another source
   // of truth. Canonical triples share exact immutable prefixes across erasures.
-  const intern = new Map(
+  const intern = batch?.intern || new Map(
     state.cutLinks.map((link, id) => [
       `${link.previous}/${link.ordinal}/${link.at}`,
       id,
     ]),
   );
   let head = null;
-  for (const id of state.boundaryOrder) {
+  for (const id of batch?batch.cuts(block):state.boundaryOrder) {
     const cut = state.boundaries[id];
     if (cut.block !== block || cut.offset < from) continue;
     if (erasure && cut.offset <= from + length) {

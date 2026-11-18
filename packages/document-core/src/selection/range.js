@@ -43,10 +43,12 @@ export function captureRange(state, anchor, focus) {
     fi = structure.position(f.block);
   if (ai === undefined || fi === undefined)
     throw new ReviewRequired("Selection target is not reachable");
+  const field=structure.isField(a.block)||structure.isField(f.block);
+  if(field&&a.block!==f.block)throw new ReviewRequired("Document fields are separate selections");
   const backwards = ai > fi || (ai === fi && a.offset > f.offset),
     start = backwards ? f : a,
     end = backwards ? a : f;
-  const blocks = order.slice(
+  const blocks = field?[a.block]:order.slice(
     structure.position(start.block),
     structure.position(end.block) + 1,
   );

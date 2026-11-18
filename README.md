@@ -2,7 +2,14 @@
 
 **just-a-doc-engine** — an experimental rich-document editing engine.
 
-Current **alpha.10 / wire50 / codec44** adds explicit literal prepared text:
+The local **alpha.11 / wire52 / codec46** candidate adds named plain-text fields,
+reviewed atomic text replacement, contribution-preserving Undo, and optional
+server-confirmed large operations with asynchronous replay. See
+[the replacement contract](docs/REPLACEMENT.md) and [storage invariants](docs/STORAGE.md).
+A local 100,000-word replacement/Undo/Redo browser check passes; broader product
+qualification remains open. This is an alpha source checkpoint.
+
+Latest published **alpha.10 / wire50 / codec44** adds explicit literal prepared text:
 `pastePrepared({mime: "text/plain", fragment: text}, bookmark, {onCommit})`.
 A host can insert reviewed text through normal replacement and Undo, including
 code blocks inside cells. Newlines stay literal in code; markup is not parsed and

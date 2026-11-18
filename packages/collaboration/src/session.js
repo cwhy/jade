@@ -96,7 +96,7 @@ export class DocumentSession {
     let record, stream;
     if (saved.checkpoint) {
       // Read old local journals, but never negotiate an old live wire.
-      if (![43,44,45,46,47,48,49,WIRE_VERSION].includes(saved.checkpoint.wire))
+      if (![43,44,45,46,47,48,49,50,51,WIRE_VERSION].includes(saved.checkpoint.wire))
         throw Error(
           "Incompatible lab journal version; original journal retained",
         );
@@ -105,7 +105,7 @@ export class DocumentSession {
       for (const event of saved.events) {
         if (event.cursor !== this.cursor + 1)
           throw Error("Local journal cursor gap");
-        record = this.replication.replay(record, event);
+        record = await this.replication.replay(record, event);
         this.cursor = event.cursor;
       }
       if (this.cursor !== saved.head.cursor)
@@ -115,7 +115,8 @@ export class DocumentSession {
         seq: saved.head.seq,
         pending: saved.head.pending,
         base: record,
-      });
+        deferred: saved.head.deferred,
+      }, {deferMutation:this.ports.deferMutation});
       this.persistedIds = new Set(saved.head.pending.map((op) => op.id));
       if (saved.checkpoint.wire !== WIRE_VERSION || record !== saved.checkpoint.record) {
         await this.journal.write(this.head(), null, {wire:WIRE_VERSION,record,cursor:this.cursor});
@@ -129,7 +130,7 @@ export class DocumentSession {
       record = upgradeRecord(checkpoint.record);
       this.cursor = checkpoint.cursor;
       stream = this.ports.createStream();
-      this.client = new Client(this.actor, stream, record);
+      this.client = new Client(this.actor, stream, record, undefined, {deferMutation:this.ports.deferMutation});
       await this.journal.write(this.head(), null, {
         wire: WIRE_VERSION,
         record,
@@ -147,6 +148,7 @@ export class DocumentSession {
       seq: this.client.seq,
       pending: structuredClone(this.client.pending),
       cursor: this.cursor,
+      ...(this.client.deferred.size?{deferred:[...this.client.deferred]}:{}),
     };
   }
   enqueue(fn) {
@@ -284,7 +286,7 @@ export class DocumentSession {
     const events = [],
       acknowledged = [];
     let readySocket = null;
-    const caret = this.onBeforeChange?.();
+    let caret;
     for (const m of batch) {
       if (m.type === "fault-armed") {
         this.faultResolve?.();
@@ -307,7 +309,7 @@ export class DocumentSession {
         continue;
       }
       if (event.cursor !== cursor + 1) throw Error("Wire event cursor gap");
-      record = this.replication.replay(record, event);
+      record = await this.replication.replay(record, event);
       cursor = event.cursor;
       events.push(event);
       acknowledged.push(event.op.id);
@@ -315,6 +317,7 @@ export class DocumentSession {
     }
     if (events.length) {
       let start = this.ports.now();
+      caret=this.onBeforeChange?.();
       this.client.receive(record);
       this.cursor = cursor;
       this.metrics.rebuildMs.push(this.ports.now() - start);

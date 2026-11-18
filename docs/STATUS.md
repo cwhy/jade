@@ -1,3 +1,41 @@
+## November 19 storage repair (local, unpublished)
+
+The user approved repairing storage growth before history, copy and export.
+Versioned partition preservation and compact private Undo identities now pass
+36 internal and 3,601 packaged contracts (`verify-TeCc2o`). Old event replay and pending
+multi-operation queues preserve their original generation IDs and payload bytes.
+
+The 100,000-word real-paste model fixture stores 4,074,706 bytes / 1,999 replicas
+when appending and 4,481,010 bytes / 2,949 replicas when prepending. Doubling the
+content approximately doubles storage. No history or retired identities are
+pruned. See [STORAGE.md](STORAGE.md) for invariants and compatibility.
+
+The app now consumes those exact tarballs (codec46 / wire52). Its backend passes
+240 checks on the earlier storage build; final app regressions are running.
+The full 100,000-word browser run passes: Replace All 2.55s, Undo 3.04s and Redo
+2.79s; maximum animation-frame gaps 217/217/233ms respectively. These are one
+local Chrome sample, not remote hosting or Windows qualification. No deployment
+is claimed. Root project evidence remains
+`research/replacement-scale-2026-11-19/`.
+
+# Local alpha.11 candidate — November 19, 2026
+
+Named text fields, reviewed conditional replacement and replacement-origin Undo
+are implemented. The current package run passes 36 internal and 3,601 contracts.
+Wire52 / codec46 are required for new writes; old saved journals have an explicit
+read path. Large-operation deferral preserves immutable outbox bytes and history;
+replication adapters may perform replay asynchronously while ordered admission,
+receipt reconciliation and journal durability remain in Jade.
+
+The host application is qualifying progress responsiveness and bounded compressed
+transport. The standalone model's 100,000-word / 10,000-match sample completes with
+exact content in about four seconds after profile-guided changes. That is a local
+single-run measurement, not a cross-browser performance guarantee. A responsive
+host must keep the expensive replay off the UI thread. Full history/copy/export
+remain application responsibilities. See [REPLACEMENT.md](REPLACEMENT.md).
+
+This is an unpublished local checkpoint; prior published checkpoints follow.
+
 # Alpha.10 checkpoint — November 15, 2026
 
 The prepared-paste host API accepts explicit `text/plain` strings through ordinary

@@ -351,3 +351,15 @@ test("insert/delete/Undo, reload and structural split agree with the full oracle
     "aWbcd",
   );
 });
+
+
+test('staged ownership follows changed replicas, retirement and backing-run replacement without mutating prior indexes',()=>{
+ const base=immutable(seed({doc:{id:'doc',type:'doc',live:true,children:['p0','p1']},p0:{id:'p0',type:'paragraph',live:true},p1:{id:'p1',type:'paragraph',live:true}},{p0:[{text:'abcd',marks:[]}],p1:[{text:'abcd',marks:['strong']}]}));
+ const s=stage(base),first=locations(s),r=s.nodes.p0.text,old=s.replicas[r];
+ writable(s,'replicas')[r]={...old,pieces:[{...old.pieces[0],from:1,length:3}],length:3};
+ const shortened=locations(s);assert.equal(shortened.get('seed:p0:0'),undefined);assert.equal(shortened.get('seed:p0:1').offset,0);assert.equal(first.get('seed:p0:0').offset,0);
+ writable(s,'runs')['seed:p1']={...s.runs['seed:p1'],formats:[{from:0,length:4,marks:['em']}]};
+ const updated=locations(s);assert.deepEqual(updated.get('seed:p1:0').atom.marks,['em']);
+ writable(s,'nodes').p1={...s.nodes.p1,live:false};assert.equal(locations(s).get('seed:p1:0'),undefined);assert.equal(shortened.get('seed:p1:0').block,'p1');
+ finish(s);
+});
