@@ -1,3 +1,16 @@
+## November 19 image presence Undo candidate
+
+Alpha.15 uses codec48 / wire54 to separate active image contribution ownership
+from lifecycle freshness. Delete → Undo → Undo insertion and both Redos work;
+stale drags and peer presence/resize changes remain protected. Completed copied
+images also support deletion without an upload slot. The content comparator
+ignores freshness alone while retaining ownership guards.
+
+Full verification passes 38 internal / 3,638 packaged contracts across 93 roots
+(exact artifact `verify-zjfnxb`). Tests include uncertain delivery, server reload,
+legacy source preservation and rich-paste Undo. Application/browser delivery and
+full product qualification are separate. See [IMAGE_PRESENCE_UNDO.md](IMAGE_PRESENCE_UNDO.md).
+
 ## November 19 whole-document content candidate
 
 Alpha.14 adds captureBodyContent/createBodyContent for host copy/export workflows.

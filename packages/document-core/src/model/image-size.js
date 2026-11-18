@@ -10,7 +10,7 @@ export function imageSizeWitness(state, image, fail = (m) => Error(m)) {
     image,
     parent: parent.id,
     asset: n.asset,
-    presence: n.imageOwner ?? null,
+    presence: n.imageGeneration ?? n.imageOwner ?? null,
     width: n.width || 180,
     height: n.height || 50,
     displayWidth: n.displayWidth ?? null,

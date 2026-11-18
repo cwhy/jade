@@ -91,7 +91,8 @@
     "whole-item-composition.test.mjs",
     "whole-item-release.test.mjs",
     "whole-item-retention.test.mjs",
-    "whole-text-replace.test.mjs"
+    "whole-text-replace.test.mjs",
+    "image-presence-ownership.test.mjs"
   ],
   "included_files": [
     "attached-source-peer-gate.test.mjs",

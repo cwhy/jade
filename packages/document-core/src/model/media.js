@@ -73,8 +73,7 @@ export function validateMedia(state, intent, { resolve, fail }) {
   if (intent.kind === "imageDelete") {
     if (!exact(intent, ["kind", "image"])) throw fail("Invalid image deletion");
     const n = state.nodes[intent.image];
-    if (!n?.live || n.type !== "image" || !n.mediaSlot)
-      throw fail("Image is unavailable");
+    if (!n?.live || n.type !== "image") throw fail("Image is unavailable");
     return { node: n };
   }
   throw fail("Unknown media command");
@@ -122,7 +121,7 @@ export function executeMedia(state, intent, action, host) {
           after: parent.children[position - 1] || null,
         }),
         active: false,
-        expected: node.imageOwner,
+        expected: node.imageOwner ?? null,
         sizeOwner: node.imageSizeOwner ?? null,
       },
       action,
@@ -133,7 +132,7 @@ export function executeMedia(state, intent, action, host) {
     parent = state.nodes[intent.parent];
   if (
     !node ||
-    node.imageOwner !== intent.expected ||
+    (node.imageOwner ?? null) !== (intent.expected ?? null) ||
     (node.imageSizeOwner ?? null) !== (intent.sizeOwner ?? null) ||
     node.live === intent.active ||
     !parent?.live
@@ -148,7 +147,17 @@ export function executeMedia(state, intent, action, host) {
       : intent.after && !parent.children.includes(intent.after))
   )
     throw fail("Image insertion boundary was removed");
-  const n = { ...node, live: intent.active, imageOwner: action };
+  // Undo restores the previous contribution owner, while the lifecycle witness
+  // always advances. Otherwise Undo(delete) blocks Undo(insert), or restoring
+  // the old witness wrongly reauthorizes a drag prepared before deletion.
+  const owner = Object.hasOwn(intent, "owner") ? intent.owner : action;
+  const n = {
+    ...node,
+    live: intent.active,
+    imageOwner: owner,
+    imageGeneration: action,
+  };
+  if (owner === null) delete n.imageOwner;
   if (!intent.active) n.retiredBy = action;
   else delete n.retiredBy;
   write("nodes")[n.id] = n;
@@ -164,7 +173,12 @@ export function executeMedia(state, intent, action, host) {
       n.id,
     );
   write("nodes")[parent.id] = { ...parent, children };
-  return { ...intent, active: !intent.active, expected: action };
+  return {
+    ...intent,
+    active: !intent.active,
+    expected: owner,
+    owner: node.imageOwner ?? null,
+  };
 }
 
 // One invariant covers direct deletion, table/list deletion, cell clearing and
@@ -206,6 +220,13 @@ export function validateMediaState(state, fail) {
   }
   const slots = new Set();
   for (const node of Object.values(state.nodes)) {
+    if (
+      node.imageGeneration !== undefined &&
+      (node.type !== "image" ||
+        typeof node.imageGeneration !== "string" ||
+        !node.imageGeneration)
+    )
+      fail("Invalid image presence generation");
     if (!node.mediaSlot) continue; // Existing host-managed asset references remain readable.
     if (
       node.type !== "image" ||
@@ -283,10 +304,12 @@ export function initializeFragmentMedia(node, block, action, write) {
 }
 
 // Durable completion resolves the original slot, not a new user contribution.
-// Keep identity, presence/size ownership, alt text and placement in comparisons.
-// Only the host-only, write-once resolution fields are excluded for managed slots.
+// Lifecycle freshness is also not content: logical imageOwner still protects
+// a peer's active presence change after an own delete/Undo cycle.
 export function mediaContentShape(node) {
-  if (node?.type !== "image" || !node.mediaSlot) return node;
-  const { asset, assetDescriptor, width, height, ...content } = node;
+  if (node?.type !== "image") return node;
+  const { imageGeneration, ...shape } = node;
+  if (!node.mediaSlot) return shape;
+  const { asset, assetDescriptor, width, height, ...content } = shape;
   return content;
 }

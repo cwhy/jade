@@ -2,7 +2,7 @@
 
 **just-a-doc-engine** — an experimental rich-document editing engine.
 
-The **alpha.14 / wire53 / codec47** candidate adds a [whole-document content boundary](docs/DOCUMENT_CONTENT.md) for host copy/export workflows: current rich body, fresh identities and list behavior without source Undo/history. Host authorization, complete assets and publication remain separate.
+The **alpha.15 / wire54 / codec48** candidate repairs [image presence Undo](docs/IMAGE_PRESENCE_UNDO.md): a delete/Undo cycle restores contribution ownership without reviving stale resize gestures. Whole-document copy/export boundaries remain available; full product qualification is still open.
 
 The prior **alpha.13 / wire53 / codec47** candidate adds optional decoded checkpoint/message ports to avoid redundant large stringify/parse allocations. Engine semantics and persisted codec remain unchanged. The prior alpha.12 [host restore boundary](docs/RESTORE.md) passed bounded host integration, including offline/retry and interrupted local-journal recovery; large-document resource qualification remains open.
 

@@ -1,3 +1,13 @@
+# Current prototype load boundary — alpha.15
+
+Codec48 / wire54 separates image presence contribution ownership from lifecycle
+freshness. Codecs43–47 and wire43–53 local journals load through the existing
+clone/validate/atomic journal boundary. Source records and immutable pending bytes
+are preserved. See [IMAGE_PRESENCE_UNDO.md](IMAGE_PRESENCE_UNDO.md) for the exact
+new fields and legacy-inverse limitation. There is no downgrade after new writes.
+
+The following section records the earlier alpha.7 boundary and its evidence.
+
 # Image-flow candidate storage upgrade
 
 Alpha.7 source is published on main: codec44 / wire48. The package remains an
