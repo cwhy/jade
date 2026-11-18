@@ -28,7 +28,10 @@ export function validateUndoStorage(state){
     if(i.kind!=='delete'||i.ids!==undefined||!Array.isArray(i.idSpans)||!i.idSpans.length)throw Error('Invalid stored Undo identities');
     for(const p of i.idSpans)if(!p||Object.keys(p).sort().join(',')!=='from,length,run'||!Number.isSafeInteger(p.from)||p.from<0||!Number.isSafeInteger(p.length)||p.length<1||!state.runs[p.run]||p.from+p.length>state.runs[p.run].chars.length)throw Error('Invalid stored Undo identity span');
   }
-  for(const effect of Object.values(state.effects))check(effect.inverse);
+  for(const effect of Object.values(state.effects)){
+    if(effect.retiredByRestore!==undefined&&(!Number.isSafeInteger(effect.retiredByRestore)||effect.retiredByRestore<1||effect.retiredByRestore>state.epoch))throw Error("Invalid retired Undo epoch");
+    check(effect.inverse);
+  }
 }
 
 // Replace All is one owned text contribution. Its inserted runs can be removed

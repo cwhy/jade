@@ -6,7 +6,7 @@ export { STORAGE_CODEC };
 // operation bytes; codecs 43/44 need no invented document fields or replacement origins. Legacy witness
 // arrays remain readable and convert on fresh capture. Never mutate the source.
 export function upgradeStorage(state) {
-  if (![43, 44, 45, STORAGE_CODEC].includes(state?.storageCodec))
+  if (![43, 44, 45, 46, STORAGE_CODEC].includes(state?.storageCodec))
     throw Error("Unsupported storage codec; source retained");
   const next = structuredClone(state);
   next.storageCodec = STORAGE_CODEC;

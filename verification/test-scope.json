@@ -22,6 +22,7 @@
     "cut.test.mjs",
     "expanding-paste.test.mjs",
     "flow-placement.test.mjs",
+    "history-restore.test.mjs",
     "image-batch.test.mjs",
     "image-flow-media-paste.test.mjs",
     "image-flow-rich-caret.test.mjs",

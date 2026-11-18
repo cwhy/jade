@@ -2,7 +2,9 @@
 
 **just-a-doc-engine** — an experimental rich-document editing engine.
 
-The **alpha.11 / wire52 / codec46** source checkpoint adds named plain-text fields,
+The **alpha.12 / wire53 / codec47** source candidate adds a [host restore boundary](docs/RESTORE.md). Live restore integration remains pending; the application still consumes alpha.11.
+
+The prior **alpha.11 / wire52 / codec46** source checkpoint adds named plain-text fields,
 reviewed atomic text replacement, contribution-preserving Undo, and optional
 server-confirmed large operations with asynchronous replay. See
 [the replacement contract](docs/REPLACEMENT.md) and [storage invariants](docs/STORAGE.md).

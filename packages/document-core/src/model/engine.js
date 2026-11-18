@@ -1189,6 +1189,7 @@ export function apply(state, op, validateFinalShape = null) {
       throw new Conflict("Invalid Undo group");
     const inverses = ids.map((id) => {
       const target = state.effects[id];
+      if(target?.retiredByRestore!==undefined)throw new Conflict("Undo predates document restore");
       if (target?.system) throw new Conflict(target.system==='textFieldCreate'?"Document field setup is not a user Undo action":"Upload completion is not a user Undo action");
       if (!target || target.actor !== op.actor)
         throw new Conflict("Undo belongs to another actor");
