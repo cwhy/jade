@@ -1,3 +1,4 @@
+import {restoreSessionBoundary} from './session-restore.js';
 // SPDX-License-Identifier: MPL-2.0
 // Generic protocol/session orchestration. All platform effects are supplied by the host.
 // Ports: openJournal() -> {read, write, close}; readCheckpoint() -> JSON string;
@@ -281,6 +282,17 @@ export class DocumentSession {
     };
   }
   async messageBatch(batch) {
+    const reset=batch.findIndex(m=>m.type==='reset');
+    if(reset>=0){
+      const message=batch[reset];
+      if(message.socket&&message.socket!==this.socket){await this.messageBatch([...batch.slice(0,reset),...batch.slice(reset+1)]);return;}
+      const previousReady=this.ready;
+      this.resetting=true;this.client.paused=true;this.ready=false;this.onChange?.();
+      if(reset)await this.messageBatch(batch.slice(0,reset));
+      if(!await restoreSessionBoundary(this,message,previousReady))return;
+      if(batch.length>reset+1)await this.messageBatch(batch.slice(reset+1));
+      return;
+    }
     let record = this.client.base,
       cursor = this.cursor;
     const events = [],
@@ -295,6 +307,7 @@ export class DocumentSession {
       }
       if (m.type === "error") throw Error(m.message);
       if (m.type === "ready") {
+        if(this.resetting)continue;
         // Decisions from the previous socket remain valid; its ready marker does not.
         if (m.socket !== this.socket) continue;
         if (m.cursor !== cursor) throw Error("Authority ready before catchup");
@@ -354,6 +367,7 @@ export class DocumentSession {
   }
   pump() {
     if (
+      this.resetting ||
       !this.ready ||
       this.manualOffline ||
       this.failed ||
@@ -415,6 +429,7 @@ export class DocumentSession {
   }
   status() {
     if (this.failed) return "Local/protocol error — editing paused";
+    if(this.resetting)return "Restoring document — preserving local input";
     if (!this.connected)
       return this.client.pending.length
         ? "Offline — local draft"

@@ -36,11 +36,14 @@ a record alone does not perform a restore or retire any effects.
 
 ## Integration still required
 
-The session currently handles ordinary event replay. Do not treat this model
-function as a completed live history-restoration feature. The host/session still
-needs a dedicated reset checkpoint protocol, epoch-bound stream issuance and
-retirement, durable pending-input recovery, empty session Undo at the boundary,
-and lost-response/reload qualification. Authorization, pre-restore history,
+The session now accepts an ordered `reset` message with `{checkpoint:{wire,record,cursor}}`
+through explicit host ports. It pauses mutation preparation, saves the old queue,
+reconciles own receipts, installs a fresh stream only after journal reset commits,
+and clears session Undo. Duplicate delivery preserves new-epoch pending work.
+A newer restore during stream issuance reconnects without treating it as a local
+recovery failure. This is not a completed application restoration feature. The host
+still needs epoch-bound stream issuance/retirement and an atomic journal reset
+implementation, plus actual browser/room lost-response and reload qualification. Authorization, pre-restore history,
 request idempotency, title/catalog updates and collaborator notification also
 remain host work.
 
@@ -49,3 +52,25 @@ retained decisions, old/new Undo, duplicate delivery, stale pending operations,
 JSON reload, repeated restore, redacted decisions, unresolved media fencing, and
 new list Enter/Undo inside restored rich cells. They do not certify the unbuilt
 room/client transaction or five-editor UX.
+
+## Session reset ports
+
+- `beforeReset({fromEpoch,toEpoch})`: optional async host hook to retain unfinished
+  composition/new media input. The client is paused before this hook runs.
+- `createResetStream(epoch)`: returns `{stream,epoch,actor?}`. Bind issuance to the
+  expected current epoch. A newer epoch result, or an error with code
+  `RESTORE_CHANGED`, reconnects for the newer checkpoint without installing a
+  mismatched stream. Fresh streams must differ from the retired stream.
+- `journal.reset(head,checkpoint,boundary)`: atomically preserve recovery/retired
+  work and replace the active journal. `boundary.retired` contains original pending
+  envelopes and decisions (`accepted`, `rejected`, `not-recorded`). Only accepted
+  decisions remove eligible recovery entries. Return `{recoveryCount}` if available.
+  A failed transaction must leave the old journal readable.
+- `onRestore({fromEpoch,epoch,recoveryCount})`: optional notification after durability.
+  `onDurable` likewise runs only after the replacement journal commits.
+
+The host must bind old streams to their issued epoch and make not-recorded status
+terminal after retirement. A late old-stream submission must not turn a completed
+reset into a fatal error in the fresh session. Ordinary event delivery must not
+overtake the reset checkpoint's acknowledgement. An already-closed session never
+installs or renders a newly completed reset.

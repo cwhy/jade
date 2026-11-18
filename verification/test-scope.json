@@ -72,6 +72,7 @@
     "row-resize.test.mjs",
     "session-durability-status.test.mjs",
     "session-ports.test.mjs",
+    "session-restore.test.mjs",
     "table-column-insertion.test.mjs",
     "table-deletion.test.mjs",
     "table-navigation.test.mjs",

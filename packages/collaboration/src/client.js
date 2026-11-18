@@ -76,6 +76,7 @@ export class Client {
   }
   get awaitingDecision() { return this.deferred.size>0; }
   prepare(intent, history = true, group = null) {
+    if(this.paused)throw new Conflict("Wait for the document restore to finish");
     if(this.awaitingDecision)throw new Conflict("Wait for the pending operation to finish");
     const op = {
       id: `${this.actor}:${this.stream}:${this.seq + 1}`,

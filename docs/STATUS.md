@@ -1,12 +1,12 @@
 ## November 19 restore boundary candidate
 
 Alpha.12 / codec47 / wire53 adds the pure host-authorized `restoreRecord` boundary.
-36 internal and 3,610 packaged contracts across 90 roots pass (`verify-3rSaeb`).
+36 internal and 3,616 packaged contracts across 91 roots pass (`verify-Tch4E7`).
 Target content/identities, old decision reconciliation, retired Undo, new Undo/Redo,
 rich-cell Enter and unresolved-image generation fencing have bounded coverage.
 The application still consumes alpha.11; its history browsing does not expose
-Restore. Reset transport, journal recovery and the atomic room/control workflow
-remain implementation work. See [RESTORE.md](RESTORE.md).
+Restore. Session reset orchestration passes injected-port tests; the actual host reset
+transport/journal and atomic room/control workflow remain implementation work. See [RESTORE.md](RESTORE.md).
 
 ## November 19 storage repair (source published; npm packages vendored)
 
