@@ -1,12 +1,17 @@
-## November 19 restore boundary candidate
+## November 19 decoded host ports candidate
 
-Alpha.12 / codec47 / wire53 adds the pure host-authorized `restoreRecord` boundary.
-36 internal and 3,616 packaged contracts across 91 roots pass (`verify-Tch4E7`).
-Target content/identities, old decision reconciliation, retired Undo, new Undo/Redo,
-rich-cell Enter and unresolved-image generation fencing have bounded coverage.
-The application still consumes alpha.11; its history browsing does not expose
-Restore. Session reset orchestration passes injected-port tests; the actual host reset
-transport/journal and atomic room/control workflow remain implementation work. See [RESTORE.md](RESTORE.md).
+Alpha.13 keeps codec47 / wire53 and adds an optional owned-object handoff for
+host-decoded checkpoints and messages, with explicit encoded-byte telemetry.
+This avoids serializing a decoded snapshot again solely to enter the session API.
+Verification passes 38 internal and 3,618 packaged contracts across 91 roots
+(exact artifact `verify-uPciUx`). This is not a snapshot-format or resource qualification.
+
+Alpha.12's restore boundary passed 36 internal / 3,616 packaged contracts across
+91 roots (exact artifact verify-c0L5PZ), plus bounded host room/journal/browser
+integration. Exact target content, old decision reconciliation, retired/fresh Undo,
+rich-cell behavior, unresolved media, lost acknowledgements, offline queues,
+transaction rollback and overlapping restores are covered. Native input and large
+retained-record reconstruction are separate gates. See [RESTORE.md](RESTORE.md).
 
 ## November 19 storage repair (source published; npm packages vendored)
 

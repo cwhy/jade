@@ -7,7 +7,7 @@ import { gapAt } from "@cwhy/jade-core/model";
 import { fixture } from "@cwhy/jade-testkit/browser-fixture";
 import { WIRE_VERSION } from "@cwhy/jade-protocol";
 
-async function harness(replication, saved = {}) {
+async function harness(replication, saved = {},decoded = false) {
   const room = new Room(fixture()),
     trace = [],
     timers = new Map();
@@ -34,7 +34,7 @@ async function harness(replication, saved = {}) {
   };
   const session = await DocumentSession.open("mock-document", "A", () => {}, {
     openJournal: async () => journal,
-    readCheckpoint: async () =>
+    readCheckpoint: async () => decoded?{checkpoint:{wire:WIRE_VERSION,record:room.snapshot(),cursor:0},byteLength:37}:
       JSON.stringify({
         wire: WIRE_VERSION,
         record: room.snapshot(),
@@ -64,8 +64,8 @@ async function harness(replication, saved = {}) {
     }
     throw Error("Protocol drain did not settle");
   }
-  const receive = (message) => {
-    socket.onmessage({ data: JSON.stringify(message) });
+  const receive = (message, decoded = false) => {
+    socket.onmessage(decoded?{data:message,byteLength:17}:{ data: JSON.stringify(message) });
   };
   socket.onopen();
   receive({ type: "ready", cursor: session.cursor });
@@ -242,4 +242,13 @@ test('asynchronous replay cannot overtake a ready marker and captures the latest
  while(!release)await new Promise(resolve=>setImmediate(resolve));assert.equal(s.cursor,0);caret=7;
  const own=s.client.prepare({kind:'insert',at:gapAt(s.client.state,'bp',1),text:'LOCAL',marks:[]});release();await pending;
  assert.equal(s.failed,undefined);assert.equal(s.cursor,1);assert.equal(captured,7);assert.equal(s.client.pending[0].id,own.id);assert.equal(s.ready,true);s.close();
+});
+
+test('decoded checkpoint and message ports retain receipt/Undo semantics without JSON re-encoding',async()=>{
+ const h=await harness(undefined,{},true),s=h.session;assert.equal(s.metrics.checkpointBytes,37);
+ const op=s.client.prepare({kind:'insert',at:gapAt(s.client.state,'bp',2),text:'decoded 你好',marks:[]});await s.persistAndSend();
+ const before=s.metrics.receivedBytes,event={cursor:1,op,receipt:h.room.accept(op)};h.receive({type:'events',events:[event]},true);await h.drain();assert.equal(s.metrics.receivedBytes,before+17);assert.deepEqual(s.client.base,h.room.snapshot());assert.deepEqual(s.client.pending,[]);assert.equal(s.client.undo(),true);const undo=s.client.pending.at(-1);assert.deepEqual(undo.intent,{kind:'undo',targets:[op.id]});await s.persistAndSend();h.receive({type:'events',events:[{cursor:2,op:undo,receipt:h.room.accept(undo)}]},true);await h.drain();assert.deepEqual(s.client.base,h.room.snapshot());assert.deepEqual(s.client.pending,[]);assert.equal(s.client.redo(),true);assert.equal(s.client.pending.at(-1).intent.target,undo.id);s.close();
+});
+test('decoded messages retain gap validation rather than trusting an object from the host',async()=>{
+ const h=await harness(undefined,{},true);h.receive({type:'ready',cursor:99},true);await h.drain();assert.equal(h.session.failed,true);assert.match(h.session.errors.at(-1),/before catchup/);h.session.close();
 });

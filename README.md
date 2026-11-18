@@ -2,7 +2,7 @@
 
 **just-a-doc-engine** — an experimental rich-document editing engine.
 
-The **alpha.12 / wire53 / codec47** source candidate adds a [host restore boundary](docs/RESTORE.md). Live restore integration remains pending; the application still consumes alpha.11.
+The **alpha.13 / wire53 / codec47** candidate adds optional decoded checkpoint/message ports to avoid redundant large stringify/parse allocations. Engine semantics and persisted codec remain unchanged. The prior alpha.12 [host restore boundary](docs/RESTORE.md) passed bounded host integration, including offline/retry and interrupted local-journal recovery; large-document resource qualification remains open.
 
 The prior **alpha.11 / wire52 / codec46** source checkpoint adds named plain-text fields,
 reviewed atomic text replacement, contribution-preserving Undo, and optional
@@ -202,3 +202,11 @@ unchanged; optional `displayWidth` renders proportionally and survives rich/grid
 copy without transferring ownership. Stale resize and Undo cannot overwrite a
 newer peer size. Codec43 and wire43–46 journals remain readable on one-way upgrade.
 See [MEDIA.md](docs/MEDIA.md) for bounds, lifecycle and host responsibilities.
+
+Hosts may optionally return `{checkpoint, byteLength}` from `readCheckpoint()`
+instead of a JSON string, and pass `{data: decodedMessage, byteLength}` to the
+socket port's `onmessage`. The host owns framing, decoding and input byte limits;
+Jade still validates the checkpoint and protocol transitions. `byteLength` must
+be a nonnegative safe integer and is telemetry, not an allocation/security limit.
+Objects are ownership transfers; do not mutate them after delivery. String ports
+remain supported. This avoids a redundant stringify/parse of large snapshots.

@@ -1,6 +1,6 @@
 {
   "name": "@cwhy/jade-browser",
-  "version": "0.1.0-alpha.12",
+  "version": "0.1.0-alpha.13",
   "private": true,
   "type": "module",
   "license": "MPL-2.0",
@@ -16,7 +16,7 @@
     "./clipboard": "./src/input/clipboard.js"
   },
   "dependencies": {
-    "@cwhy/jade-core": "0.1.0-alpha.12"
+    "@cwhy/jade-core": "0.1.0-alpha.13"
   },
   "repository": {
     "type": "git",

@@ -1,7 +1,8 @@
-import {restoreSessionBoundary} from './session-restore.js';
 // SPDX-License-Identifier: MPL-2.0
+import {decodedPort} from './decoded-port.js';
+import {restoreSessionBoundary} from './session-restore.js';
 // Generic protocol/session orchestration. All platform effects are supplied by the host.
-// Ports: openJournal() -> {read, write, close}; readCheckpoint() -> JSON string;
+// Ports: openJournal() -> {read, write, close}; readCheckpoint() -> JSON string or {checkpoint, byteLength};
 // connect() -> {readyState, send, close, onopen, onmessage, onerror, onclose};
 // openState is that connection's open sentinel. schedule/cancel own timers;
 // now is monotonic milliseconds. The journal write atomically saves its supplied
@@ -124,10 +125,11 @@ export class DocumentSession {
       }
     } else {
       const raw = await this.ports.readCheckpoint(),
-        checkpoint = JSON.parse(raw);
+        decoded = typeof raw==='string'?decodedPort(raw):decodedPort(raw?.checkpoint,raw?.byteLength),
+        checkpoint = decoded.value;
       if (checkpoint.wire !== WIRE_VERSION)
         throw Error("Wire version mismatch");
-      this.metrics.checkpointBytes = new TextEncoder().encode(raw).length;
+      this.metrics.checkpointBytes = decoded.bytes;
       record = upgradeRecord(checkpoint.record);
       this.cursor = checkpoint.cursor;
       stream = this.ports.createStream();
@@ -257,9 +259,10 @@ export class DocumentSession {
     };
     ws.onmessage = (e) => {
       if (ws !== this.socket || this.manualOffline || this.closed) return;
-      this.metrics.receivedBytes += new TextEncoder().encode(e.data).length;
       try {
-        this.receive({ ...JSON.parse(e.data), socket: ws });
+        const decoded=decodedPort(e.data,e.byteLength);
+        this.metrics.receivedBytes += decoded.bytes;
+        this.receive({ ...decoded.value, socket: ws });
       } catch (error) {
         this.enqueue(() => {
           throw error;
