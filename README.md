@@ -2,7 +2,7 @@
 
 **just-a-doc-engine** — an experimental rich-document editing engine.
 
-The local **alpha.11 / wire52 / codec46** candidate adds named plain-text fields,
+The **alpha.11 / wire52 / codec46** source checkpoint adds named plain-text fields,
 reviewed atomic text replacement, contribution-preserving Undo, and optional
 server-confirmed large operations with asynchronous replay. See
 [the replacement contract](docs/REPLACEMENT.md) and [storage invariants](docs/STORAGE.md).

@@ -1,4 +1,4 @@
-## November 19 storage repair (local, unpublished)
+## November 19 storage repair (source published; npm packages vendored)
 
 The user approved repairing storage growth before history, copy and export.
 Versioned partition preservation and compact private Undo identities now pass
@@ -11,14 +11,14 @@ content approximately doubles storage. No history or retired identities are
 pruned. See [STORAGE.md](STORAGE.md) for invariants and compatibility.
 
 The app now consumes those exact tarballs (codec46 / wire52). Its backend passes
-240 checks on the earlier storage build; final app regressions are running.
-The full 100,000-word browser run passes: Replace All 2.55s, Undo 3.04s and Redo
-2.79s; maximum animation-frame gaps 217/217/233ms respectively. These are one
+240 checks; 13 Find, 12 Replace and 26 live browser scenarios also pass.
+The full 100,000-word browser run passes: Replace All 2.72s, Undo 2.02s and Redo
+2.54s; maximum animation-frame gaps 100/83/83ms respectively. These are one
 local Chrome sample, not remote hosting or Windows qualification. No deployment
 is claimed. Root project evidence remains
 `research/replacement-scale-2026-11-19/`.
 
-# Local alpha.11 candidate — November 19, 2026
+# Alpha.11 source checkpoint — November 19, 2026
 
 Named text fields, reviewed conditional replacement and replacement-origin Undo
 are implemented. The current package run passes 36 internal and 3,601 contracts.
@@ -34,7 +34,9 @@ single-run measurement, not a cross-browser performance guarantee. A responsive
 host must keep the expensive replay off the UI thread. Full history/copy/export
 remain application responsibilities. See [REPLACEMENT.md](REPLACEMENT.md).
 
-This is an unpublished local checkpoint; prior published checkpoints follow.
+Source checkpoint `5c75370ee6b868c0420d148c615de2bb3563b1e0` is pushed to main.
+Node 22/24 engine CI and the website/demo CI passed. Packages are vendored
+into the host application; no npm registry release is claimed. Prior checkpoints follow.
 
 # Alpha.10 checkpoint — November 15, 2026
 

@@ -1,4 +1,4 @@
-# Paragraph storage and replay — local alpha.11
+# Paragraph storage and replay — alpha.11
 
 The prototype must retain anchors, owned Undo and immutable retry payloads while a
 long document grows through ordinary editing. Codec 46 / wire 52 add versioned
@@ -76,6 +76,6 @@ is tracked separately.
 
 The application-grown record is 6,512,236 bytes / 2,000 replicas at 100,000 words
 (including a title, longer account/operation IDs and receipts). Its local browser
-check passes exact Replace All, one Undo and Redo: 2.55 / 3.04 / 2.79 seconds, with
-maximum frame gaps 217 / 217 / 233 ms, below the unchanged 250 ms test limit.
+check passes exact Replace All, one Undo and Redo: 2.72 / 2.02 / 2.54 seconds, with
+maximum frame gaps 100 / 83 / 83 ms, below the unchanged 250 ms test limit.
 This single-machine result does not establish Cloudflare limits or regional latency.
