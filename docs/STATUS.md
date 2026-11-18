@@ -1,3 +1,13 @@
+## November 19 whole-document content candidate
+
+Alpha.14 adds captureBodyContent/createBodyContent for host copy/export workflows.
+Codec47 and wire53 remain unchanged. Twelve new contracts cover fresh identities,
+source-history exclusion, rich cells, literal code, list marker scope/inheritance,
+numbering, geometry and incomplete media. Full packaged verification passes
+38 internal and 3,630 packaged contracts across 92 roots (`verify-EhxNHZ`).
+This does not implement the application Make a copy or export flows. See
+[DOCUMENT_CONTENT.md](DOCUMENT_CONTENT.md).
+
 ## November 19 decoded host ports candidate
 
 Alpha.13 keeps codec47 / wire53 and adds an optional owned-object handoff for

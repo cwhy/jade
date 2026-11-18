@@ -20,6 +20,7 @@
     "creation-ownership-extra.test.mjs",
     "creation-projection-cost.test.mjs",
     "cut.test.mjs",
+    "document-content.test.mjs",
     "expanding-paste.test.mjs",
     "flow-placement.test.mjs",
     "history-restore.test.mjs",
@@ -94,6 +95,7 @@
   ],
   "included_files": [
     "attached-source-peer-gate.test.mjs",
+    "block-insertion.test.mjs",
     "boundary-paragraph.test.mjs",
     "cell-clear.test.mjs",
     "cell-paste.test.mjs",
@@ -113,8 +115,11 @@
     "creation-ownership-extra.test.mjs",
     "creation-projection-cost.test.mjs",
     "cut.test.mjs",
+    "document-content.test.mjs",
     "expanding-paste.test.mjs",
     "flow-placement.test.mjs",
+    "image-flow-media-paste.test.mjs",
+    "image-flow-rich-caret.test.mjs",
     "image-item-placement-gate.test.mjs",
     "links.test.mjs",
     "list-admission.test.mjs",
@@ -132,6 +137,7 @@
     "list-range-enter.test.mjs",
     "list-structure.test.mjs",
     "list-tail-paste.test.mjs",
+    "media-lifecycle.test.mjs",
     "mixed-flat-paste.test.mjs",
     "mixed-list-marker.test.mjs",
     "mixed-paste.test.mjs",
@@ -175,11 +181,7 @@
     "whole-item-composition.test.mjs",
     "whole-item-release.test.mjs",
     "whole-item-retention.test.mjs",
-    "whole-text-replace.test.mjs",
-    "block-insertion.test.mjs",
-    "media-lifecycle.test.mjs",
-    "image-flow-media-paste.test.mjs",
-    "image-flow-rich-caret.test.mjs"
+    "whole-text-replace.test.mjs"
   ],
   "external_test_roots": [
     {

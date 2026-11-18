@@ -1,6 +1,6 @@
 {
   "name": "@cwhy/jade-core",
-  "version": "0.1.0-alpha.13",
+  "version": "0.1.0-alpha.14",
   "private": true,
   "type": "module",
   "license": "MPL-2.0",
@@ -29,7 +29,8 @@
     "./block-selection": "./src/selection/blocks.js",
     "./storage": "./src/storage.js",
     "./text-replacement": "./src/commands/text-replacement.js",
-    "./literal-search": "./src/search/literal.js"
+    "./literal-search": "./src/search/literal.js",
+    "./document-content": "./src/document-content.js"
   },
   "dependencies": {},
   "repository": {
