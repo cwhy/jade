@@ -79,6 +79,7 @@ export function bindSelectionController({
         "insertBlock",
         "codeLanguage",
         "codePaste",
+        "adjacentParagraph",
         "previewImageSize",
         "imageSize",
         "previewCut",
@@ -752,6 +753,14 @@ export function bindSelectionController({
         ) {
           event.preventDefault();
           openLink();
+          return;
+        }
+      }
+      if ((event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey && event.key === "Enter" && planners.adjacentParagraph) {
+        const range = capture(client().state);
+        if (!range.kind && range.slices.length === 1 && range.slices[0].type === "code") {
+          event.preventDefault();
+          execute((state, r, op) => planners.adjacentParagraph(state, r.slices[0].block, op, {side:"after", reuse:true}), range);
           return;
         }
       }
@@ -1694,6 +1703,22 @@ export function bindSelectionController({
         notice(error.message);
         return false;
       }
+    },
+    beginCodeBoundary(block) {
+      try {
+        const c=client();
+        if(disposed||composing||!planners.adjacentParagraph||c.state.nodes[block]?.type!=="code"||!c.state.nodes[block].live)throw new ReviewRequired("Choose an available code block after composition");
+        const range=captureRange(c.state,{block,offset:0},{block,offset:0});
+        return {client:c,epoch:c.state.epoch,block,range};
+      }catch(error){notice(error.message);return null;}
+    },
+    commitCodeBoundary(lease,side) {
+      try {
+        const c=client();
+        if(disposed||composing||!lease||lease.client!==c||lease.epoch!==c.state.epoch||c.state.nodes[lease.block]?.type!=="code"||!c.state.nodes[lease.block].live)throw new ReviewRequired("Code editing session changed; reopen the controls");
+        execute((state,r,op)=>planners.adjacentParagraph(state,lease.block,op,{side}),lease.range);
+        return true;
+      }catch(error){notice(error.message);return false;}
     },
     beginCodeLanguage(block) {
       try {

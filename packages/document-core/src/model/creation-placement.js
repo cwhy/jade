@@ -1,23 +1,34 @@
 // SPDX-License-Identifier: MPL-2.0
 import {
   orderedCreationPlacements,
+  placementSubject,
   requiredCreationPlacements,
   suspendCreationPlacements,
   resumeCreationPlacements,
 } from "./creation-placement-projection.js";
 // Independent structural contributions. A placement holds its prerequisite
 // creation content, independently of the source layout. All changes are staged.
-import { reconcileCreationContent } from "./creation-lifecycle.js";
+import { paragraphCreation } from "./paragraph-exit.js";
+import { treeParent } from "./tree.js";
+import {
+  reconcileCreationContent,
+  heldCreation,
+} from "./creation-lifecycle.js";
 export function beginCreationPlacement(state, intent, action, host) {
-  if (intent.kind !== "creationItemMove") return null;
+  if (!["creationItemMove", "creationParagraphExit"].includes(intent.kind))
+    return null;
+  const paragraph = intent.kind === "creationParagraphExit";
   const r = state.creations[intent.creation];
   if (
     !r ||
-    r.root !== intent.root ||
-    typeof intent.outdent !== "boolean" ||
+    (paragraph
+      ? paragraphCreation(state, intent.root)?.id !== r.id
+      : r.root !== intent.root || typeof intent.outdent !== "boolean") ||
     !(
       intent.basis === null ||
-      state.creationPlacements[intent.basis]?.creations[0] === r.id
+      (state.creationPlacements[intent.basis]?.creations[0] === r.id &&
+        (!paragraph ||
+          state.creationPlacements[intent.basis]?.intent.root === intent.root))
     )
   )
     throw host.fail("Unknown whole-item birth");
@@ -26,6 +37,7 @@ export function beginCreationPlacement(state, intent, action, host) {
       .map((p) => p.id),
     path = requiredCreationPlacements(state, {
       creation: r.id,
+      subject: placementSubject({ creations: [r.id], intent }),
       basis: intent.basis,
     });
   const rebase =
@@ -42,16 +54,30 @@ export function beginCreationPlacement(state, intent, action, host) {
     reconcileCreationContent(state, id, { ...host, action });
   }
   if (rebase) resumeCreationPlacements(state, path, host);
-  return creations;
+  let boundaryInverse = null;
+  if (paragraph) {
+    const family = Object.values(state.listFamilies).find((f) =>
+      Object.values(f.cuts).some((c) => c.block === intent.root),
+    );
+    const cut =
+      family && Object.values(family.cuts).find((c) => c.block === intent.root);
+    if (cut)
+      boundaryInverse = host.execute(
+        { kind: "listHold", family: family.id, boundary: cut.id },
+        action + ":boundary",
+      );
+  }
+  return { creations, boundaryInverse };
 }
 export function finishCreationPlacement(
   state,
   id,
-  creations,
+  held,
   intent,
   inverse,
   host,
 ) {
+  const { creations, boundaryInverse } = held;
   const predecessor = intent.basis;
   host.write("creationPlacements")[id] = {
     id,
@@ -60,6 +86,9 @@ export function finishCreationPlacement(
     active: true,
     projected: true,
     predecessor,
+    ...(intent.kind === "creationParagraphExit"
+      ? { destination: treeParent(state, intent.root).id, boundaryInverse }
+      : {}),
     intent,
     inverse,
   };
@@ -87,6 +116,16 @@ export function executeCreationPlacementActive(state, intent, action, host) {
       holds: { ...r.holds, [p.id]: intent.active },
     };
     if (intent.active) reconcileCreationContent(state, id, { ...host, action });
+  }
+  if (p.boundaryInverse) {
+    const boundaryInverse = host.execute(
+      p.boundaryInverse,
+      action + ":boundary",
+    );
+    host.write("creationPlacements")[p.id] = {
+      ...state.creationPlacements[p.id],
+      boundaryInverse,
+    };
   }
   if (!same) resumeCreationPlacements(state, required, host);
   return { ...intent, active: !intent.active };
@@ -124,14 +163,24 @@ export function validateCreationPlacements(state) {
     if (
       p.predecessor !== null &&
       (!seen.has(p.predecessor) ||
-        state.creationPlacements[p.predecessor].creations[0] !== p.creations[0])
+        placementSubject(state.creationPlacements[p.predecessor]) !==
+          placementSubject(p))
     )
       throw Error("Invalid accepted placement predecessor");
+    const paragraph = p.intent?.kind === "creationParagraphExit";
     if (
-      p.intent?.kind !== "creationItemMove" ||
-      p.intent.creation !== p.creations[0] ||
-      p.intent.root !== state.creations[p.creations[0]]?.root ||
-      typeof p.intent.outdent !== "boolean"
+      p.intent?.creation !== p.creations[0] ||
+      (paragraph
+        ? state.creations[p.creations[0]]?.kind !== "paragraph" ||
+          state.nodes[p.intent.root]?.type !== "paragraph" ||
+          !["doc", "cell", "list_item"].includes(
+            state.nodes[p.destination]?.type,
+          ) ||
+          (p.boundaryInverse !== null &&
+            p.boundaryInverse?.kind !== "listHoldActive")
+        : p.intent?.kind !== "creationItemMove" ||
+          p.intent.root !== state.creations[p.creations[0]]?.root ||
+          typeof p.intent.outdent !== "boolean")
     )
       throw Error("Invalid accepted placement intent");
     seen.add(id);
@@ -148,7 +197,7 @@ export function validateCreationPlacements(state) {
       !r.holds ||
       typeof r.holds !== "object" ||
       r.sourceApplied !== r.active ||
-      r.contentApplied !== (r.active || Object.values(r.holds).some(Boolean))
+      r.contentApplied !== (r.active || heldCreation(r))
     )
       throw Error("Invalid creation topology lifetime");
     for (const [id, active] of Object.entries(r.holds))

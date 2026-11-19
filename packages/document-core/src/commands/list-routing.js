@@ -16,6 +16,9 @@ import { planProseJoin } from "./prose-join.js";
 import { publicPlan, planReplace } from "./replace.js";
 import { plainFragment } from "../fragment.js";
 import { insertionMarks } from "../selection/range.js";
+import { creationProseContainer } from "../model/creation-extent.js";
+import { orderedCreationPlacements } from "../model/creation-placement-projection.js";
+import { paragraphCreation } from "../model/paragraph-exit.js";
 import { paragraphForEnter } from "../model/list-boundary.js";
 export { planListIndent };
 export const planCodeIndent = (...args) => publicPlan(codeIndent(...args));
@@ -29,17 +32,48 @@ function context(state, range) {
 }
 export function planEnter(state, range, op, options = {}) {
   const { node, parent } = context(state, range);
+  const continuation =
+    node.type === "paragraph" &&
+    parent?.type === "list_item" &&
+    parent.children[0] !== node.id &&
+    (creationProseContainer(state, node.id, parent) ||
+      paragraphCreation(state, node.id));
+  if (
+    !options.soft &&
+    range.collapsed &&
+    continuation &&
+    parent.children.at(-1) === node.id &&
+    state.replicas[node.text].length === 0
+  ) {
+    const intent = {
+      kind: "creationParagraphExit",
+      root: node.id,
+      creation: paragraphCreation(state, node.id).id,
+      basis:
+        orderedCreationPlacements(state)
+          .filter(
+            (p) =>
+              p.active &&
+              p.intent.kind === "creationParagraphExit" &&
+              p.intent.root === node.id,
+          )
+          .at(-1)?.id ?? null,
+    };
+    const next = apply(state, { ...op, intent });
+    return { intent, state: next, after: gapAt(next, node.id, 0) };
+  }
   if (
     !options.soft &&
     node.type === "paragraph" &&
-    parent?.type === "list_item"
+    parent?.type === "list_item" &&
+    !continuation
   )
     return planListEnter(state, range, op);
   if (
     !options.soft &&
     range.collapsed &&
     node.type === "paragraph" &&
-    ["doc", "cell"].includes(parent?.type)
+    (["doc", "cell"].includes(parent?.type) || continuation)
   ) {
     const intent = { kind: "proseEnter", at: range.start },
       next = apply(state, { ...op, intent });

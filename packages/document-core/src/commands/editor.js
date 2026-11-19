@@ -78,3 +78,4 @@ export {previewImageSize,planImageSize} from './image-size.js';
 export {planCodeLanguage,CODE_LANGUAGES,codeLanguageState} from "./code-language.js";
 
 export {planCodePaste} from './code-paste.js';
+export {planAdjacentParagraph} from './adjacent-paragraph.js';

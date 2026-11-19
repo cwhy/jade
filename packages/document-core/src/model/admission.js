@@ -254,6 +254,12 @@ export function validatePublicIntent(
         fail: (m) => new engine.Conflict("Admission: " + m),
       });
       return;
+    case "creationParagraphExit":
+      if(inBatch || Object.keys(intent).some(k=>!["kind","root","creation","basis"].includes(k)) || !(intent.basis===null || typeof intent.basis==="string"))fail("invalid paragraph exit");
+      fields("root","creation");return;
+    case "insertAdjacentParagraph":
+      if(inBatch || Object.keys(intent).some(k=>!["kind","block","side"].includes(k)) || !["before","after"].includes(intent.side))fail("invalid paragraph boundary");
+      fields("block");return;
     case "codeLanguageAuto":
       if (!inBatch || Object.keys(intent).some(k=>!["kind","block","language","revision"].includes(k)) || typeof intent.language!=="string" || !Number.isSafeInteger(intent.revision) || intent.revision<0)fail("invalid automatic code language");
       fields("block");return;

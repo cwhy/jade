@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 import { withTreeParents } from "./tree.js";
 import { extentRestoration } from "./creation-extent.js";
+import { paragraphExitSteps } from "./paragraph-exit.js";
 import { creationItemSteps } from "./item-placement.js";
 // A later move records the accepted predecessor of this creation. That path
 // encodes its destination relative to the creation's independently owned source
@@ -11,14 +12,27 @@ export function orderedCreationPlacements(state) {
     (a, b) => a.acceptedAt - b.acceptedAt,
   );
 }
+export const placementSubject = (p) =>
+  JSON.stringify(
+    p.intent?.kind === "creationParagraphExit"
+      ? ["paragraph", p.creations[0], p.intent.root]
+      : ["item", p.creations[0]],
+  );
 export function requiredCreationPlacements(state, override = null) {
   const records = orderedCreationPlacements(state),
     latest = new Map(),
     needed = new Set();
-  for (const p of records) if (p.active) latest.set(p.creations[0], p.id);
+  for (const p of records) if (p.active) latest.set(placementSubject(p), p.id);
   if (override) {
-    if (override.basis === null) latest.delete(override.creation);
-    else latest.set(override.creation, override.basis);
+    if (override.basis === null)
+      latest.delete(
+        override.subject ?? JSON.stringify(["item", override.creation]),
+      );
+    else
+      latest.set(
+        override.subject ?? JSON.stringify(["item", override.creation]),
+        override.basis,
+      );
   }
   function include(id) {
     if (needed.has(id)) return;
@@ -51,7 +65,11 @@ export function suspendCreationPlacements(state, host) {
 export function resumeCreationPlacements(state, path, host) {
   withTreeParents(state, () => {
     for (const p of path) {
-      const steps = creationItemSteps(state, p.intent, p.id, host.fail, true);
+      const steps = (
+        p.intent.kind === "creationParagraphExit"
+          ? paragraphExitSteps
+          : creationItemSteps
+      )(state, p.intent, p.id, host.fail, true);
       const inverse = host.execute(steps, p.id);
       host.write("creationPlacements")[p.id] = {
         ...state.creationPlacements[p.id],

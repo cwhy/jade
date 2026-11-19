@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
+import {paragraphExitSteps} from "./paragraph-exit.js";
+import {executeAdjacentParagraph} from "./adjacent-paragraph.js";
 import {executeCodeLanguage,validateCodeLanguage,validateCodeLanguages} from "./code-language.js";
 import {insertionContext} from './insertion-context.js';
 import {compactUndo,expandUndo,validateUndoStorage,replacementUndo} from './undo-storage.js';
@@ -811,6 +813,7 @@ function execute(state, intent, action, materialization = null) {
     write: (field) => writable(state, field),
     fail: (m) => new Conflict(m),
   };
+  if(intent.kind === "insertAdjacentParagraph")return executeAdjacentParagraph(state,intent,action,{...creationHost,remember:(key,block,offset)=>rememberBoundary(state,key,block,offset)});
   prepareCreationTarget(state, intent, creationHost);
   const boundaryPath = placementBoundaryPath(state, intent, (at) =>
     resolveGap(state, at),
@@ -826,6 +829,7 @@ function execute(state, intent, action, materialization = null) {
   if(['imageInsert','imageComplete','imageDelete','imagePresence','mediaNoop'].includes(intent.kind))return executeMedia(state,intent,action,{write:field=>writable(state,field),resolve:gap=>resolveGap(state,gap),presenceBoundary:(image,parent)=>imageFlowPresenceBoundary(state,image,parent),fail:m=>new Conflict(m)});
   if (["tableCreate","tableCreationActive"].includes(intent.kind))
     return executeTableCreate(state,intent,action,{write:field=>writable(state,field),remember:(id,block,offset)=>rememberBoundary(state,id,block,offset),resolve:gap=>resolveGap(state,gap),fail:m=>new Conflict(m)});
+  if(intent.kind === "creationParagraphExit")return execute(state,paragraphExitSteps(state,intent,action,creationHost.fail),action,materialization);
   if (intent.kind === "creationItemMove")
     return execute(
       state,

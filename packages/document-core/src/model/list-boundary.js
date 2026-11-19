@@ -36,7 +36,7 @@ export function executeListBoundary(state, intent, action, host) {
 export function executeListHold(state, intent, action, host) {
   const original = state.listFamilies[intent.family],
     cut = original?.cuts[intent.boundary];
-  if (!cut || typeof cut.wrapper !== "string")
+  if (!cut || (typeof cut.wrapper !== "string" && !["prose","flow"].includes(original.kind)))
     throw host.fail("Unknown retained list boundary");
   const owner = cut.ownerActive ?? cut.active,
     holds = structuredClone(cut.holds || []);

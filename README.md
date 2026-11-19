@@ -2,7 +2,7 @@
 
 **just-a-doc-engine** — an experimental rich-document editing engine.
 
-The **alpha.18 / wire56 / codec50** candidate adds [atomic code paste with guarded language detection](docs/CODE_LANGUAGE.md), preserving manual choices and one owned Undo. Literal code input, image presence Undo and whole-document copy/export boundaries remain available; the application picker and full product qualification are separate gates.
+The **alpha.19 / wire57 / codec51** candidate adds [owned paragraph creation beside blocks](docs/CODE_BOUNDARIES.md), plus [atomic code paste with guarded language detection](docs/CODE_LANGUAGE.md), preserving manual choices and one owned Undo. Literal code input, image presence Undo and whole-document copy/export boundaries remain available; the application picker and full product qualification are separate gates.
 
 The prior **alpha.13 / wire53 / codec47** candidate adds optional decoded checkpoint/message ports to avoid redundant large stringify/parse allocations. Engine semantics and persisted codec remain unchanged. The prior alpha.12 [host restore boundary](docs/RESTORE.md) passed bounded host integration, including offline/retry and interrupted local-journal recovery; large-document resource qualification remains open.
 

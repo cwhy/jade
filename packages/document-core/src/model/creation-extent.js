@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+import { retainedParagraphParent } from "./paragraph-exit.js";
 // A creation's structural extent follows certified paragraph lineage. It does
 // not own a peer cut or absorb arbitrary neighbouring blocks. Text ownership,
 // visibility and the author activity of each cut remain separate ledgers.
@@ -22,6 +23,23 @@ export function creationExtent(state, r, fail) {
     f.source,
     ...Object.values(f.cuts).map((c) => c.block),
   ];
+  if (r.kind === "paragraph") {
+    if (
+      !["prose", "flow"].includes(f.kind) ||
+      (f.kind === "flow" &&
+        f.regions?.some((region) => region.kind !== "prose"))
+    )
+      throw fail("Created paragraph changed its retained grammar");
+    const members = [...new Set([...r.members, ...f.layout.blocks])];
+    return {
+      f,
+      roots: f.layout.blocks,
+      members,
+      children: [],
+      cutMembers: f.layout.blocks,
+      lineageMembers,
+    };
+  }
   if (f.kind) {
     if (
       !["prose", "flow"].includes(f.kind) ||
@@ -144,13 +162,20 @@ export function extentRestoration(state, inverse, creations, fail) {
 // A prose cut retains its grammar when an adopted creation is rewrapped.
 // Only that creation's own wrapper can serve as a list-item prose container.
 export function creationProseContainer(state, source, owner) {
-  const n = state.nodes[source],
+  const basis =
+      Object.values(state.listFamilies).find((f) =>
+        f.layout.blocks.includes(source),
+      )?.source ?? source,
+    n = state.nodes[basis],
     r = n?.creation && state.creations[n.creation];
   return (
     !!r &&
-    r.members.includes(source) &&
+    r.members.includes(basis) &&
     !!owner &&
-    ((owner.id === r.root && owner.type === "list_item") ||
+    ((r.kind === "paragraph" &&
+      retainedParagraphParent(state, r, owner) &&
+      ["doc", "cell", "list_item"].includes(owner.type)) ||
+      (owner.id === r.root && owner.type === "list_item") ||
       (owner.id === r.scope && ["doc", "cell"].includes(owner.type)))
   );
 }

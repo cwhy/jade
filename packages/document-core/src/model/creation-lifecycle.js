@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+import { retainedParagraphParent } from "./paragraph-exit.js";
 import { creationExtent } from "./creation-extent.js";
 import {
   suspendCreationPlacements,
@@ -73,7 +74,9 @@ function requireRetainedPlacement(state, r, host) {
   if (
     !state.nodes[r.parent]?.live ||
     (!root.live && !root.creationHidden) ||
-    (owner && owner.id !== r.parent)
+    (owner &&
+      owner.id !== r.parent &&
+      !retainedParagraphParent(state, r, owner))
   )
     throw host.fail(
       "Pasted item placement changed; Undo needs structural review",
@@ -82,31 +85,81 @@ function requireRetainedPlacement(state, r, host) {
   if (
     roots.some((id) => {
       const p = treeParent(state, id);
-      return p && p.id !== r.parent;
+      return p && p.id !== r.parent && !retainedParagraphParent(state, r, p);
     })
   )
     throw host.fail(
       "Pasted item placement changed; Undo needs structural review",
     );
   const expected = children.filter((id) => state.nodes[id]?.live);
-  if (root.live && !sameIds(root.children, expected))
+  if (r.kind !== "paragraph" && root.live && !sameIds(root.children, expected))
     throw host.fail(
       "Pasted item children changed; Undo needs structural review",
     );
 }
-function attach(state, r, host) {
-  const { roots } = topology(state, r, host.fail),
-    present = roots.filter((id) => treeParent(state, id));
+export function attachCreation(state, r, host) {
+  let { roots } = topology(state, r, host.fail);
+  if (r.kind === "paragraph")
+    roots = roots.filter((id) => state.nodes[id]?.live);
+  const present = roots.filter((id) => treeParent(state, id));
   if (present.length) {
     if (
       present.length !== roots.length ||
-      present.some((id) => treeParent(state, id).id !== r.parent)
+      present.some((id) => {
+        const p = treeParent(state, id);
+        return p.id !== r.parent && !retainedParagraphParent(state, r, p);
+      })
     )
       throw host.fail("Created family moved outside its retained placement");
     return;
   }
   const parent = state.nodes[r.parent],
     children = [...parent.children];
+  if (r.kind === "paragraph") {
+    const anchor = state.nodes[r.boundary.anchor];
+    if (!anchor?.live || !children.includes(anchor.id))
+      throw host.fail("Paragraph boundary is unavailable");
+    const peers = Object.values(state.creations)
+      .filter(
+        (other) =>
+          other.kind === "paragraph" &&
+          other.parent === r.parent &&
+          other.boundary.anchor === r.boundary.anchor &&
+          other.boundary.side === r.boundary.side,
+      )
+      .sort(
+        (a, b) =>
+          (r.boundary.side === "after" ? -1 : 1) *
+          (a.acceptedAt - b.acceptedAt),
+      );
+    const index = peers.findIndex((other) => other.id === r.id);
+    let at =
+        children.indexOf(anchor.id) + (r.boundary.side === "after" ? 1 : 0),
+      found = false;
+    for (const other of peers.slice(index + 1)) {
+      const ids = topology(state, other, host.fail).roots.filter((id) =>
+        children.includes(id),
+      );
+      if (ids.length) {
+        at = children.indexOf(ids[0]);
+        found = true;
+        break;
+      }
+    }
+    if (!found)
+      for (const other of peers.slice(0, index).reverse()) {
+        const ids = topology(state, other, host.fail).roots.filter((id) =>
+          children.includes(id),
+        );
+        if (ids.length) {
+          at = children.indexOf(ids.at(-1)) + 1;
+          break;
+        }
+      }
+    children.splice(at, 0, ...roots);
+    host.write("nodes")[parent.id] = { ...parent, children };
+    return;
+  }
   let at =
     r.after !== null
       ? children.indexOf(r.after) + 1
@@ -144,11 +197,12 @@ export function reconcileCreationContent(state, id, host) {
   requireScope(state, r, host.fail);
   if (desired) {
     for (const key of r.members) setVisibility(state, key, true, host);
-    host.write("nodes")[r.root] = {
-      ...state.nodes[r.root],
-      children: topology(state, r, host.fail).children,
-    };
-    attach(state, r, host);
+    if (r.kind !== "paragraph")
+      host.write("nodes")[r.root] = {
+        ...state.nodes[r.root],
+        children: topology(state, r, host.fail).children,
+      };
+    attachCreation(state, r, host);
   }
   const inverse = host.execute(
     r.contentInverse,
@@ -179,7 +233,7 @@ function reconcileCreationSource(state, id, host) {
     sourceInverse: inverse,
   };
   host.write("creations")[id] = r;
-  if (r.active || heldCreation(r)) attach(state, r, host);
+  if (r.active || heldCreation(r)) attachCreation(state, r, host);
   resumeCreationPlacements(state, placements, host);
 }
 export function executeCreationActive(state, intent, action, host) {
@@ -213,11 +267,12 @@ export function prepareCreationTarget(state, intent, host) {
   // The original pasted characters remain erased, and unrelated media stays hidden.
   for (const key of intent.kind === "listEnter"
     ? r.members
-    : [r.root, r.children[0], id])
+    : [...new Set([r.root, r.children[0], id].filter(Boolean))])
     setVisibility(state, key, true, host);
   const children = r.children.filter((key) => state.nodes[key].live);
-  host.write("nodes")[r.root] = { ...state.nodes[r.root], children };
-  attach(state, r, host);
+  if (r.kind !== "paragraph")
+    host.write("nodes")[r.root] = { ...state.nodes[r.root], children };
+  attachCreation(state, r, host);
 }
 function affectedCreations(state) {
   const base = predecessor(state);
@@ -268,7 +323,7 @@ export function projectCreations(state, host) {
     if (cuts) for (const id of cutMembers) keep.add(id);
     if (keep.size) {
       keep.add(r.root);
-      keep.add(children[0]);
+      if (children[0]) keep.add(children[0]);
     }
     for (const id of members) {
       const n = state.nodes[id];
@@ -281,9 +336,9 @@ export function projectCreations(state, host) {
     }
     const visibleChildren = children.filter((id) => keep.has(id)),
       root = state.nodes[r.root];
-    if (!sameIds(root.children, visibleChildren))
+    if (r.kind !== "paragraph" && !sameIds(root.children, visibleChildren))
       host.write("nodes")[r.root] = { ...root, children: visibleChildren };
-    if (keep.size) attach(state, r, host);
+    if (keep.size) attachCreation(state, r, host);
     else detach(state, r, host);
   }
 }
@@ -304,6 +359,17 @@ export function validateCreations(state) {
       !state.nodes[r.parent]
     )
       throw Error("Invalid creation ownership");
+    if (
+      r.kind !== undefined &&
+      (r.kind !== "paragraph" ||
+        state.nodes[r.root]?.type !== "paragraph" ||
+        r.children.length ||
+        !r.boundary ||
+        typeof r.boundary.anchor !== "string" ||
+        !["before", "after"].includes(r.boundary.side) ||
+        !Number.isSafeInteger(r.acceptedAt))
+    )
+      throw Error("Invalid paragraph creation ownership");
     if (
       r.members.some(
         (id) => state.nodes[id].creationHidden && state.nodes[id].live,
