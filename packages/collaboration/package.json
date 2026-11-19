@@ -1,6 +1,6 @@
 {
   "name": "@cwhy/jade-collaboration",
-  "version": "0.1.0-alpha.17",
+  "version": "0.1.0-alpha.18",
   "private": true,
   "type": "module",
   "license": "MPL-2.0",
@@ -17,8 +17,8 @@
     "./restore": "./src/restore.js"
   },
   "dependencies": {
-    "@cwhy/jade-core": "0.1.0-alpha.17",
-    "@cwhy/jade-protocol": "0.1.0-alpha.17"
+    "@cwhy/jade-core": "0.1.0-alpha.18",
+    "@cwhy/jade-protocol": "0.1.0-alpha.18"
   },
   "repository": {
     "type": "git",

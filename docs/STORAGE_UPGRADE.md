@@ -1,3 +1,14 @@
+## Codec50 / wire56: implicit code-language defaults
+
+Language layers may carry `automatic:true`. Manual layers always take precedence;
+manual Redo retains its original priority among manual layers. Older layers have
+no flag and retain manual semantics. Codec49 and earlier supported records load
+without invented history. Live wire55 and older clients are fenced; old journals
+remain readable through the explicit compatibility boundary. The automatic
+language hint is conditional on the captured document revision, an empty code
+block and no explicit choice. A stale hint becomes a metadata no-op while the
+paste's ordinary text operation can still commit and retain one owned Undo.
+
 ## Codec49 / wire55: code-language contributions
 
 Lossless load now accepts codec48 as well as 43–47. A legacy code block receives

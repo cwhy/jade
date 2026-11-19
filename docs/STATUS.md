@@ -1,3 +1,10 @@
+# Current prototype checkpoint
+
+Alpha.18 adds automatic-language paste as one owned transaction (codec50/wire56).
+The exact verify-sojRUv artifact passes 38 internal / 3,694 packaged contracts
+over 96 roots, plus six controller cases against the installed external consumer.
+Application classification/integration is next; this is not yet the deployed dependency.
+
 ## November 19 code-language model candidate
 
 Alpha.17 adds owned language contributions and controller leases (codec49/wire55).

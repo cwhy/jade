@@ -205,7 +205,7 @@ test("codec48 source stays intact and receives no fabricated language history", 
   const before = JSON.stringify(s),
     loaded = upgradeStorage(s);
   assert.equal(JSON.stringify(s), before);
-  assert.equal(loaded.storageCodec, 49);
+  assert.equal(loaded.storageCodec, 50);
   assert.equal(loaded.nodes.code.codeLanguages, undefined);
   assert.deepEqual({ ...loaded, storageCodec: 48 }, s);
 });

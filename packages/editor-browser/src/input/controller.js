@@ -78,6 +78,7 @@ export function bindSelectionController({
         "richInsert",
         "insertBlock",
         "codeLanguage",
+        "codePaste",
         "previewImageSize",
         "imageSize",
         "previewCut",
@@ -317,6 +318,10 @@ export function bindSelectionController({
   }
   const inCode = (range) => !range.kind && range.slices.length === 1 && range.slices[0].type === "code";
   const inputFragment = (value, range) => inCode(range) ? literalFragment(value) : plainFragment(value);
+  function pasteCode(value,range,marks=[]) {
+    if(planners.codePaste)execute((state,r,op)=>planners.codePaste(state,r,value,op,{inheritedMarks:marks}),range);
+    else replace(literalFragment(value),range,true,marks,true);
+  }
   function replace(
     fragment,
     range = capture(client().state),
@@ -982,7 +987,7 @@ export function bindSelectionController({
       if (inCode(range)) {
         const value = data.getData("text/plain");
         if (!value) throw new ReviewRequired("Code blocks accept text; this clipboard has no text representation");
-        replace(literalFragment(value), range, true, localMarks, true);
+        pasteCode(value, range, localMarks);
         return;
       }
       const html = plainOnly ? "" : data.getData("text/html"),
@@ -1144,7 +1149,8 @@ export function bindSelectionController({
             throw new ReviewRequired("Prepared text requires a text selection");
           // Explicit host-reviewed text: no markup parsing or inherited marks.
           // Use ordinary replacement so code keeps newlines in one replica.
-          replace(inputFragment(fragment, bookmark.range), bookmark.range, true, [], true);
+          if(inCode(bookmark.range))pasteCode(fragment,bookmark.range);
+          else replace(inputFragment(fragment, bookmark.range), bookmark.range, true, [], true);
           try { onCommit?.(); } catch { notice("Paste inserted; its follow-up action failed."); }
         } else if (bookmark.range.kind === "cells") {
           const grid = mime === SLICE_MIME

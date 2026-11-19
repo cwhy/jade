@@ -879,7 +879,7 @@ function execute(state, intent, action, materialization = null) {
         rememberBoundary(state, id, block, offset),
       fail: (m) => new Conflict(m),
     });
-  if (["codeLanguage", "codeLanguageActive"].includes(intent.kind))
+  if (["codeLanguage", "codeLanguageAuto", "codeLanguageActive"].includes(intent.kind))
     return executeCodeLanguage(state,intent,action,{write:field=>writable(state,field),fail:m=>new Conflict(m)});
   if (["tableFormat", "tableFormatActive"].includes(intent.kind))
     return executeTableFormat(state, intent, action, {

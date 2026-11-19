@@ -208,7 +208,7 @@ for (const offset of [0, 2, 4, 6, 8])
 
 test("older snapshots cannot be accepted as the current codec", () => {
   const s = structuredClone(listFixture());
-  assert.equal(s.storageCodec, 49);
+  assert.equal(s.storageCodec, 50);
   s.storageCodec = 9;
   assert.throws(
     () =>

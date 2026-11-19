@@ -15,13 +15,17 @@ export const CODE_LANGUAGES = Object.freeze([
   "markdown",
 ]);
 const has = (node) => Object.hasOwn(node, "language");
+const chosen = (ledger) =>
+  ledger?.layers.findLast((layer) => layer.active && !layer.automatic) ||
+  ledger?.layers.findLast((layer) => layer.active);
 export function codeLanguageState(node) {
   if (!node || node.type !== "code") throw Error("Choose a code block");
   const ledger = node.codeLanguages;
-  const active = ledger?.layers.findLast((layer) => layer.active);
+  const active = chosen(ledger);
   return {
     language: active?.language ?? (node.language || "plaintext"),
-    explicit: !!active || (ledger ? ledger.present : has(node)),
+    explicit:
+      !!(active && !active.automatic) || (ledger ? ledger.present : has(node)),
     contribution: active?.id ?? null,
   };
 }
@@ -35,19 +39,29 @@ export function validateCodeLanguage(state, intent) {
 }
 function project(node, ledger) {
   const next = { ...node, codeLanguages: ledger },
-    active = ledger.layers.findLast((layer) => layer.active);
+    active = chosen(ledger);
   if (active) next.language = active.language;
   else if (ledger.present) next.language = ledger.base;
   else delete next.language;
   return next;
 }
 export function executeCodeLanguage(state, intent, action, { write, fail }) {
-  const adding = intent.kind === "codeLanguage",
+  const automatic = intent.kind === "codeLanguageAuto",
+    adding = automatic || intent.kind === "codeLanguage",
     node = adding
       ? validateCodeLanguage(state, intent)
       : state.nodes[intent.block];
   if (!node?.live || node.type !== "code")
     throw fail("Code block is unavailable; restore it before Undo");
+  // Detection is merely a default. A stale paste still inserts its text, but
+  // cannot change the language after any intervening accepted document edit.
+  if (
+    automatic &&
+    (state.revision !== intent.revision ||
+      codeLanguageState(node).explicit ||
+      state.replicas[node.text]?.length !== 0)
+  )
+    return { kind: "batch", intents: [] };
   const ledger = node.codeLanguages || {
     present: has(node),
     base: has(node) ? node.language : null,
@@ -62,7 +76,12 @@ export function executeCodeLanguage(state, intent, action, { write, fail }) {
   const layers = adding
     ? [
         ...ledger.layers,
-        { id: action, language: intent.language, active: true },
+        {
+          id: action,
+          language: intent.language,
+          active: true,
+          ...(automatic ? { automatic: true } : {}),
+        },
       ]
     : ledger.layers.map((layer) =>
         layer.id === intent.target
@@ -98,12 +117,13 @@ export function validateCodeLanguages(state) {
       if (
         !layer ||
         Object.keys(layer).some(
-          (k) => !["id", "language", "active"].includes(k),
+          (k) => !["id", "language", "active", "automatic"].includes(k),
         ) ||
         typeof layer.id !== "string" ||
         !layer.id ||
         ids.has(layer.id) ||
         typeof layer.active !== "boolean" ||
+        (Object.hasOwn(layer, "automatic") && layer.automatic !== true) ||
         !CODE_LANGUAGES.includes(layer.language)
       )
         throw Error("Invalid code language contribution");
