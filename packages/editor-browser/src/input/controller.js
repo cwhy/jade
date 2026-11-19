@@ -36,7 +36,7 @@ import {
   validateFragment,
   MIME,
 } from "@cwhy/jade-core/fragment";
-import { resolveGap } from "@cwhy/jade-core/model";
+import { resolveGap, text as modelText } from "@cwhy/jade-core/model";
 import {
   planDelete,
   planEnter,
@@ -737,6 +737,23 @@ export function bindSelectionController({
     compositionend: finishComposition,
     keydown: safely((event) => {
       if (composing || event.isComposing || event.keyCode === 229) return;
+      // Code creation shortcut is an insertion route, not a text conversion.
+      // In a list item the required empty paragraph remains its leading child.
+      if (
+        (event.metaKey !== event.ctrlKey) && event.altKey && !event.shiftKey &&
+        !event.getModifierState?.("AltGraph") &&
+        (event.code === "KeyC" || event.key.toLowerCase() === "c") &&
+        planners.insertBlock
+      ) {
+        const state = client().state, range = capture(state);
+        if (!range.kind && range.collapsed && range.slices.length === 1 &&
+            range.slices[0].type === "paragraph" &&
+            modelText(state, range.slices[0].block).length === 0) {
+          event.preventDefault();
+          execute((next, selected, op) => planners.insertBlock(next, selected, op, {type:"code"}), range);
+          return;
+        }
+      }
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "v")
         plainPaste = event.shiftKey;
       if (

@@ -42,3 +42,12 @@ Live clients must use wire58. The format change does not prune history.
 These checks do not certify all structural moves, conversions, slash menus,
 native input platforms, or the host's complete UI. This is an experimental
 engine source checkpoint, not an npm registry publication.
+
+## Blank paragraph shortcut
+
+Cmd+Option+C / Ctrl+Alt+C uses the same insertion planner on an empty paragraph.
+It retains the empty paragraph and inserts code below in the same body/cell/item.
+Nonempty prose, selections, existing code, active composition, Shift variants and
+AltGraph do not trigger it. Shortcut recognition accepts physical KeyC for the
+Mac Option-generated character. This is distinct from fenced text conversion,
+whose prefix-restoring Undo remains a separate implementation.
