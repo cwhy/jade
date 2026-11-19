@@ -98,7 +98,7 @@ export class DocumentSession {
     let record, stream;
     if (saved.checkpoint) {
       // Read old local journals, but never negotiate an old live wire.
-      if (![43,44,45,46,47,48,49,50,51,52,53,54,55,56,WIRE_VERSION].includes(saved.checkpoint.wire))
+      if (![43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,WIRE_VERSION].includes(saved.checkpoint.wire))
         throw Error(
           "Incompatible lab journal version; original journal retained",
         );

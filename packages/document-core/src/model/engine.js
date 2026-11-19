@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 import {paragraphExitSteps} from "./paragraph-exit.js";
-import {executeAdjacentParagraph} from "./adjacent-paragraph.js";
+import {executeAdjacentParagraph,executeAdjacentCode} from "./adjacent-paragraph.js";
 import {executeCodeLanguage,validateCodeLanguage,validateCodeLanguages} from "./code-language.js";
 import {insertionContext} from './insertion-context.js';
 import {compactUndo,expandUndo,validateUndoStorage,replacementUndo} from './undo-storage.js';
@@ -813,6 +813,7 @@ function execute(state, intent, action, materialization = null) {
     write: (field) => writable(state, field),
     fail: (m) => new Conflict(m),
   };
+  if(intent.kind === "insertCodeBlock")return executeAdjacentCode(state,intent,action,{...creationHost,remember:(key,block,offset)=>rememberBoundary(state,key,block,offset)});
   if(intent.kind === "insertAdjacentParagraph")return executeAdjacentParagraph(state,intent,action,{...creationHost,remember:(key,block,offset)=>rememberBoundary(state,key,block,offset)});
   prepareCreationTarget(state, intent, creationHost);
   const boundaryPath = placementBoundaryPath(state, intent, (at) =>

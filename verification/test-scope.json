@@ -96,7 +96,8 @@
     "code-input.test.mjs",
     "code-language.test.mjs",
     "code-paste-language.test.mjs",
-    "adjacent-paragraph.test.mjs"
+    "adjacent-paragraph.test.mjs",
+    "code-insertion.test.mjs"
   ],
   "included_files": [
     "attached-source-peer-gate.test.mjs",

@@ -1,3 +1,4 @@
+import {STORAGE_CODEC} from "@cwhy/jade-core/storage";
 // SPDX-License-Identifier: MPL-2.0
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
@@ -15,7 +16,7 @@ const op=(seq,intent,version=2)=>({id:`a:s:${seq}`,actor:'a',stream:'s',seq,epoc
 const value=(s,b)=>text(s,b).map(a=>a.char).join('');
 const fixture=()=>seed({doc:{id:'doc',type:'doc',live:true,children:['p']},p:{id:'p',type:'paragraph',live:true}},{p:[{text:'first second third',marks:['strong']} ]});
 const legacy=JSON.parse(readFileSync(new URL('./fixtures/legacy-partitions.json',import.meta.url)));
-const normalize=s=>({...s,storageCodec:51});
+const normalize=s=>({...s,storageCodec:STORAGE_CODEC});
 test('legacy event replay preserves original generations, gaps, effects and immutable receipts exactly',()=>{
  let record=legacy.initial;
  for(const event of legacy.events)record=replay(record,event);

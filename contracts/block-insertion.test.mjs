@@ -172,7 +172,7 @@ test("creation survives room persistence, duplicate receipt and replay", () => {
   );
 });
 for (const type of ["bullet_list", "ordered_list", "code"])
-  test(`insert empty ${type} uses existing rich insertion and focuses its text`, () => {
+  test(`insert empty ${type} preserves text and focuses the inserted block`, () => {
     const s = initial(),
       o = op("A", 1),
       plan = planInsertBlock(s, range(s), o, { type });

@@ -20,6 +20,12 @@ export function planInsertBlock(
     range.slices[0].type !== "paragraph"
   )
     throw new ReviewRequired("Place a caret in a paragraph to insert a block");
+  if (type === "code") {
+    const point = resolveGap(state, range.start),
+      intent = { kind: "insertCodeBlock", block: point.block },
+      next = apply(state, { ...op, intent });
+    return { intent, state: next, after: gapAt(next, op.id + ":code", 0) };
+  }
   if (type === "image") {
     const point = resolveGap(state, range.start),
       parent = treeParent(state, point.block),

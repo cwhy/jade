@@ -257,6 +257,9 @@ export function validatePublicIntent(
     case "creationParagraphExit":
       if(inBatch || Object.keys(intent).some(k=>!["kind","root","creation","basis"].includes(k)) || !(intent.basis===null || typeof intent.basis==="string"))fail("invalid paragraph exit");
       fields("root","creation");return;
+    case "insertCodeBlock":
+      if(inBatch || Object.keys(intent).some(k=>!["kind","block"].includes(k)))fail("invalid code insertion boundary");
+      fields("block");return;
     case "insertAdjacentParagraph":
       if(inBatch || Object.keys(intent).some(k=>!["kind","block","side"].includes(k)) || !["before","after"].includes(intent.side))fail("invalid paragraph boundary");
       fields("block");return;

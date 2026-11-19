@@ -1,8 +1,17 @@
 // SPDX-License-Identifier: MPL-2.0
 import { treeParent } from "./tree.js";
 import { createReplica } from "../text/pieces.js";
-import { registerCreation, attachCreation } from "./creation-lifecycle.js";
-export function adjacentParagraphTarget(state, block, side, fail = (message) => Error(message)) {
+import {
+  registerCreation,
+  attachCreation,
+  reviveCreationBoundary,
+} from "./creation-lifecycle.js";
+export function adjacentParagraphTarget(
+  state,
+  block,
+  side,
+  fail = (message) => Error(message),
+) {
   const node = state.nodes[block],
     parent = treeParent(state, block);
   if (
@@ -23,27 +32,42 @@ export function adjacentParagraphTarget(state, block, side, fail = (message) => 
   return { node, parent };
 }
 export function executeAdjacentParagraph(state, intent, action, host) {
+  return executeAdjacentLeaf(state, intent, action, host, "paragraph");
+}
+export function executeAdjacentCode(state, intent, action, host) {
+  if (state.nodes[intent.block]?.type !== "paragraph")
+    throw host.fail("Code insertion requires a paragraph boundary");
+  return executeAdjacentLeaf(
+    state,
+    { ...intent, side: "after" },
+    action,
+    host,
+    "code",
+  );
+}
+function executeAdjacentLeaf(state, intent, action, host, type) {
+  reviveCreationBoundary(state, intent.block, host);
   const { node, parent } = adjacentParagraphTarget(
       state,
       intent.block,
       intent.side,
       host.fail,
     ),
-    id = action + ":paragraph",
+    id = action + ":" + type,
     text = id + ":text";
   if (state.nodes[id] || state.replicas[text])
     throw host.fail("Paragraph identity reused");
   let scope = parent;
   while (!["doc", "cell"].includes(scope.type))
     scope = treeParent(state, scope.id);
-  host.write("nodes")[id] = { id, type: "paragraph", live: true, text };
+  host.write("nodes")[id] = { id, type, live: true, text };
   host.write("replicas")[text] = createReplica(text, id, [], action);
   host.remember(text + ":empty", id, 0);
   registerCreation(
     state,
     {
       id: action,
-      kind: "paragraph",
+      kind: type,
       root: id,
       members: [id],
       children: [],

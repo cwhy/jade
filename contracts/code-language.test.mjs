@@ -1,3 +1,4 @@
+import {STORAGE_CODEC} from "@cwhy/jade-core/storage";
 // SPDX-License-Identifier: MPL-2.0
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -205,7 +206,7 @@ test("codec48 source stays intact and receives no fabricated language history", 
   const before = JSON.stringify(s),
     loaded = upgradeStorage(s);
   assert.equal(JSON.stringify(s), before);
-  assert.equal(loaded.storageCodec, 51);
+  assert.equal(loaded.storageCodec, STORAGE_CODEC);
   assert.equal(loaded.nodes.code.codeLanguages, undefined);
   assert.deepEqual({ ...loaded, storageCodec: 48 }, s);
 });

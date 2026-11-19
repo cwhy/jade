@@ -1,3 +1,4 @@
+import {STORAGE_CODEC} from "@cwhy/jade-core/storage";
 // SPDX-License-Identifier: MPL-2.0
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -208,7 +209,7 @@ for (const offset of [0, 2, 4, 6, 8])
 
 test("older snapshots cannot be accepted as the current codec", () => {
   const s = structuredClone(listFixture());
-  assert.equal(s.storageCodec, 51);
+  assert.equal(s.storageCodec, STORAGE_CODEC);
   s.storageCodec = 9;
   assert.throws(
     () =>

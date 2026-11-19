@@ -12,6 +12,8 @@ import { predecessor } from "./draft.js";
 import { changedKeys } from "./changed-keys.js";
 import { isImmutable } from "./immutable.js";
 const checkedCreations = new WeakMap();
+const dependencyCache = new WeakMap();
+const leafCreation = (r) => ["paragraph", "code"].includes(r.kind);
 const sameIds = (a, b) =>
   a.length === b.length && a.every((id, i) => id === b[i]);
 const blocked = (n) =>
@@ -92,15 +94,27 @@ function requireRetainedPlacement(state, r, host) {
       "Pasted item placement changed; Undo needs structural review",
     );
   const expected = children.filter((id) => state.nodes[id]?.live);
-  if (r.kind !== "paragraph" && root.live && !sameIds(root.children, expected))
+  if (!leafCreation(r) && root.live && !sameIds(root.children, expected))
     throw host.fail(
       "Pasted item children changed; Undo needs structural review",
     );
 }
+// A delayed boundary operation may refer to an independently undone leaf.
+// Only its certified creation can revive it; explicit deletion/clear still wins.
+export function reviveCreationBoundary(state, block, host) {
+  const node = state.nodes[block],
+    r = state.creations[node?.creation];
+  if (!node?.creationHidden || !r || !leafCreation(r)) return;
+  requireScope(state, r, host.fail);
+  if (!topology(state, r, host.fail).members.includes(block))
+    throw host.fail("Unknown retained creation boundary");
+  setVisibility(state, r.root, true, host);
+  setVisibility(state, block, true, host);
+  attachCreation(state, r, host);
+}
 export function attachCreation(state, r, host) {
   let { roots } = topology(state, r, host.fail);
-  if (r.kind === "paragraph")
-    roots = roots.filter((id) => state.nodes[id]?.live);
+  if (leafCreation(r)) roots = roots.filter((id) => state.nodes[id]?.live);
   const present = roots.filter((id) => treeParent(state, id));
   if (present.length) {
     if (
@@ -113,16 +127,35 @@ export function attachCreation(state, r, host) {
       throw host.fail("Created family moved outside its retained placement");
     return;
   }
-  const parent = state.nodes[r.parent],
+  let parent = state.nodes[r.parent],
     children = [...parent.children];
-  if (r.kind === "paragraph") {
-    const anchor = state.nodes[r.boundary.anchor];
+  if (leafCreation(r)) {
+    let anchor = state.nodes[r.boundary.anchor];
+    const prerequisite = state.creations[anchor?.creation];
+    if (
+      !anchor?.live &&
+      anchor?.creationHidden &&
+      prerequisite &&
+      leafCreation(prerequisite) &&
+      prerequisite.parent === r.parent &&
+      prerequisite.scope === r.scope &&
+      prerequisite.acceptedAt < r.acceptedAt
+    ) {
+      requireScope(state, prerequisite, host.fail);
+      // Revive only the retained structural boundary. Its creator's inactive
+      // text/metadata operations are not replayed by a dependent's Redo.
+      setVisibility(state, anchor.id, true, host);
+      attachCreation(state, prerequisite, host);
+      anchor = state.nodes[anchor.id];
+      parent = state.nodes[r.parent];
+      children = [...parent.children];
+    }
     if (!anchor?.live || !children.includes(anchor.id))
       throw host.fail("Paragraph boundary is unavailable");
     const peers = Object.values(state.creations)
       .filter(
         (other) =>
-          other.kind === "paragraph" &&
+          leafCreation(other) &&
           other.parent === r.parent &&
           other.boundary.anchor === r.boundary.anchor &&
           other.boundary.side === r.boundary.side,
@@ -197,7 +230,7 @@ export function reconcileCreationContent(state, id, host) {
   requireScope(state, r, host.fail);
   if (desired) {
     for (const key of r.members) setVisibility(state, key, true, host);
-    if (r.kind !== "paragraph")
+    if (!leafCreation(r))
       host.write("nodes")[r.root] = {
         ...state.nodes[r.root],
         children: topology(state, r, host.fail).children,
@@ -270,7 +303,7 @@ export function prepareCreationTarget(state, intent, host) {
     : [...new Set([r.root, r.children[0], id].filter(Boolean))])
     setVisibility(state, key, true, host);
   const children = r.children.filter((key) => state.nodes[key].live);
-  if (r.kind !== "paragraph")
+  if (!leafCreation(r))
     host.write("nodes")[r.root] = { ...state.nodes[r.root], children };
   attachCreation(state, r, host);
 }
@@ -297,8 +330,24 @@ function affectedCreations(state) {
   }
   return Object.values(state.creations || {});
 }
+function boundaryDependencies(creations) {
+  const cached = dependencyCache.get(creations);
+  if (cached) return cached;
+  const dependents = new Map();
+  for (const dependent of Object.values(creations)) {
+    const anchor = dependent.boundary?.anchor;
+    if (!anchor) continue;
+    if (!dependents.has(anchor)) dependents.set(anchor, []);
+    dependents.get(anchor).push(dependent.root);
+  }
+  if (isImmutable(creations)) dependencyCache.set(creations, dependents);
+  return dependents;
+}
 export function projectCreations(state, host) {
-  for (let r of affectedCreations(state)) {
+  const dependents = boundaryDependencies(state.creations);
+  // Boundary dependencies point only to earlier births. Resolve children first
+  // so Undo of the last dependent hides its now-unneeded anchor in this pass.
+  for (let r of affectedCreations(state).slice().reverse()) {
     if (r.contentApplied !== (r.active || heldCreation(r)))
       reconcileCreationContent(state, r.id, host);
     r = state.creations[r.id];
@@ -316,7 +365,12 @@ export function projectCreations(state, host) {
     const keep = new Set(
       members.filter((id) => {
         const n = state.nodes[id];
-        return n.text && state.replicas[n.text].length > 0;
+        return (
+          (n.text && state.replicas[n.text].length > 0) ||
+          (n.type === "code" &&
+            n.codeLanguages?.layers.some((layer) => layer.active)) ||
+          (dependents.get(id) || []).some((root) => state.nodes[root]?.live)
+        );
       }),
     );
     const cuts = f && Object.values(f.cuts).some((c) => c.active);
@@ -336,7 +390,7 @@ export function projectCreations(state, host) {
     }
     const visibleChildren = children.filter((id) => keep.has(id)),
       root = state.nodes[r.root];
-    if (r.kind !== "paragraph" && !sameIds(root.children, visibleChildren))
+    if (!leafCreation(r) && !sameIds(root.children, visibleChildren))
       host.write("nodes")[r.root] = { ...root, children: visibleChildren };
     if (keep.size) attachCreation(state, r, host);
     else detach(state, r, host);
@@ -361,8 +415,8 @@ export function validateCreations(state) {
       throw Error("Invalid creation ownership");
     if (
       r.kind !== undefined &&
-      (r.kind !== "paragraph" ||
-        state.nodes[r.root]?.type !== "paragraph" ||
+      (!leafCreation(r) ||
+        state.nodes[r.root]?.type !== r.kind ||
         r.children.length ||
         !r.boundary ||
         typeof r.boundary.anchor !== "string" ||
