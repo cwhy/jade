@@ -51,3 +51,9 @@ Nonempty prose, selections, existing code, active composition, Shift variants an
 AltGraph do not trigger it. Shortcut recognition accepts physical KeyC for the
 Mac Option-generated character. This is distinct from fenced text conversion,
 whose prefix-restoring Undo remains a separate implementation.
+
+Alpha.21's exact packages pass the same 38 internal / 3,781 contract suite.
+Nineteen installed-controller browser cases qualify the shortcut's body/cell/item
+placement, focus, peer-safe Undo and key/context guards. This is headless modifier
+coverage, not native Windows/IME certification. The host app maintains those
+browser checks as part of its installation qualification.
