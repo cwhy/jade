@@ -30,6 +30,7 @@ import {
 } from "@cwhy/jade-core/selection";
 import {
   plainFragment,
+  literalFragment,
   plainText,
   htmlText,
   validateFragment,
@@ -313,6 +314,8 @@ export function bindSelectionController({
     );
     revealSelection();
   }
+  const inCode = (range) => !range.kind && range.slices.length === 1 && range.slices[0].type === "code";
+  const inputFragment = (value, range) => inCode(range) ? literalFragment(value) : plainFragment(value);
   function replace(
     fragment,
     range = capture(client().state),
@@ -662,7 +665,7 @@ export function bindSelectionController({
           return;
         }
         if (event.data)
-          replace(plainFragment(event.data), saved.range, false, saved.marks);
+          replace(inputFragment(event.data, saved.range), saved.range, false, saved.marks);
         else {
           render();
           if (saved.range.kind) {
@@ -918,7 +921,7 @@ export function bindSelectionController({
       if (event.inputType === "insertText") {
         const range = capture(client().state);
         replace(
-          plainFragment(event.data || ""),
+          inputFragment(event.data || "", range),
           range,
           true,
           typingStyle.marks(client().state, range, client()),
@@ -972,6 +975,15 @@ export function bindSelectionController({
       typingStyle.clear();
       const data = event.clipboardData;
       if (!data) throw new ReviewRequired("Clipboard unavailable");
+      // Code receives the clipboard's literal text representation, before any
+      // internal rich/grid envelope is interpreted. Media cannot become uploads
+      // or structural blocks inside a code replica.
+      if (inCode(range)) {
+        const value = data.getData("text/plain");
+        if (!value) throw new ReviewRequired("Code blocks accept text; this clipboard has no text representation");
+        replace(literalFragment(value), range, true, localMarks, true);
+        return;
+      }
       const html = plainOnly ? "" : data.getData("text/html"),
         envelope =
           plainOnly ||
@@ -1131,7 +1143,7 @@ export function bindSelectionController({
             throw new ReviewRequired("Prepared text requires a text selection");
           // Explicit host-reviewed text: no markup parsing or inherited marks.
           // Use ordinary replacement so code keeps newlines in one replica.
-          replace(plainFragment(fragment), bookmark.range, true, [], true);
+          replace(inputFragment(fragment, bookmark.range), bookmark.range, true, [], true);
           try { onCommit?.(); } catch { notice("Paste inserted; its follow-up action failed."); }
         } else if (bookmark.range.kind === "cells") {
           const grid = mime === SLICE_MIME

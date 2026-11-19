@@ -99,10 +99,24 @@ export function planEnter(
   validateDestination(state, range);
   const at = resolveGap(state, range.start),
     node = state.nodes[at.block];
-  if (soft || node.type === "code")
-    return planReplace(state, range, literal("\n"), op, {
+  if (soft || node.type === "code") {
+    // Carry only leading indentation already before the insertion point. This
+    // avoids duplicating the rest of an indent when Enter occurs inside it.
+    // Capture it in the authored insertion, so replay never recalculates it
+    // against a collaborator's later edits or a restored version.
+    const before =
+      node.type === "code"
+        ? text(state, at.block)
+            .slice(0, at.offset)
+            .map((atom) => atom.char)
+            .join("")
+        : "";
+    const line = before.slice(before.lastIndexOf("\n") + 1);
+    const indent = node.type === "code" ? line.match(/^[ \t]*/)[0] : "";
+    return planReplace(state, range, literal("\n" + indent), op, {
       inheritedMarks: inheritedMarks ?? insertionMarks(state, range),
     });
+  }
   const owner = selectionStructure(state).parent(node.id);
   if (owner.type === "list_item") {
     const children = state.nodes[owner.children[1]];

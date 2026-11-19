@@ -1,3 +1,12 @@
+## November 19 literal code input candidate
+
+Alpha.16 retains codec48 / wire54. Enter carries authored indentation; literal
+code paste normalizes line endings without the paragraph-fragment count limit.
+The exact alpha.16 artifact passes 38 internal / 3,660 packaged contracts across
+94 roots (`verify-XN3UsN`), plus eight isolated browser scenarios against its
+installed external consumer. Application integration/deployment is pending.
+See [CODE_INPUT.md](CODE_INPUT.md). No full editor or native IME sign-off is implied.
+
 ## November 19 image presence Undo candidate
 
 Alpha.15 uses codec48 / wire54 to separate active image contribution ownership

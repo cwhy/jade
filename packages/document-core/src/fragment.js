@@ -76,6 +76,26 @@ export function plainFragment(value, style = []) {
       })),
   };
 }
+// Code input is one literal text block, regardless of its number of lines.
+// Keep the same payload bound and newline policy as ordinary plain input.
+export function literalFragment(value, style = []) {
+  if (typeof value !== "string" || value.length > 100000)
+    throw Error("Clipboard text is too large");
+  return {
+    version: 1,
+    blocks: [
+      {
+        type: "paragraph",
+        content: [
+          {
+            text: value.replace(/\r\n?/g, "\n"),
+            marks: marks(style),
+          },
+        ],
+      },
+    ],
+  };
+}
 export function plainText(fragment) {
   return fragment.blocks
     .map((b) => b.content.map((c) => c.text).join(""))
