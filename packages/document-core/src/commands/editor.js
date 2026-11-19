@@ -74,3 +74,5 @@ export { planRichInsert } from "./rich-insert.js";
 export {planInsertBlock} from './block-insertion.js';
 
 export {previewImageSize,planImageSize} from './image-size.js';
+
+export {planCodeLanguage,CODE_LANGUAGES,codeLanguageState} from "./code-language.js";

@@ -2,7 +2,7 @@
 
 **just-a-doc-engine** — an experimental rich-document editing engine.
 
-The **alpha.16 / wire54 / codec48** candidate adds [literal code input](docs/CODE_INPUT.md): Enter carries indentation, rich clipboard input uses its text representation, and long code paste stays one block. Image presence Undo and whole-document copy/export boundaries remain available; full product qualification is still open.
+The **alpha.17 / wire55 / codec49** candidate adds [owned code-language metadata](docs/CODE_LANGUAGE.md) and controller leases. Literal code input, image presence Undo and whole-document copy/export boundaries remain available; the application picker and full product qualification are separate gates.
 
 The prior **alpha.13 / wire53 / codec47** candidate adds optional decoded checkpoint/message ports to avoid redundant large stringify/parse allocations. Engine semantics and persisted codec remain unchanged. The prior alpha.12 [host restore boundary](docs/RESTORE.md) passed bounded host integration, including offline/retry and interrupted local-journal recovery; large-document resource qualification remains open.
 

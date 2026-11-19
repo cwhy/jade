@@ -1,3 +1,13 @@
+## Codec49 / wire55: code-language contributions
+
+Lossless load now accepts codec48 as well as 43–47. A legacy code block receives
+no fabricated ledger; its exact language attribute and presence remain the base
+when the first new language choice is authored. Inactive contributions stay for
+Redo, while structural comparison ignores fully inactive language history.
+Copy/export includes only visible language. Legacy wire43–54 journal payloads and
+receipts remain unchanged; unsupported live wire versions are rejected before
+checkpoint/event delivery. See CODE_LANGUAGE.md for the bounded contract.
+
 # Current prototype load boundary — alpha.15
 
 Codec48 / wire54 separates image presence contribution ownership from lifecycle

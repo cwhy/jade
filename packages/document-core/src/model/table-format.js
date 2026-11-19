@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+import {structuralLanguageShape} from "./code-language.js";
 import { tableGrid } from "../selection/grid.js";
 const equal = (a, b) => JSON.stringify(a) === JSON.stringify(b),
   copy = (x) => structuredClone(x);
@@ -197,6 +198,7 @@ export function validateTableFormats(state) {
 // but do not treat it as a dependency preventing structural Undo. Visible
 // properties still participate in the caller's exact shape comparison.
 export function structuralStyleShape(node) {
+  node=structuralLanguageShape(node);
   if (
     !node.tableFormats ||
     node.tableFormats.layers.some((layer) => layer.active)

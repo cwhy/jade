@@ -254,6 +254,9 @@ export function validatePublicIntent(
         fail: (m) => new engine.Conflict("Admission: " + m),
       });
       return;
+    case "codeLanguage":
+      if (Object.keys(intent).some(k=>!["kind","block","language"].includes(k)) || typeof intent.language!=="string")fail("invalid code language");
+      fields("block");return;
     case "tableFormat":
       if (
         inBatch ||

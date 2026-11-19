@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: MPL-2.0
+import {executeCodeLanguage,validateCodeLanguage,validateCodeLanguages} from "./code-language.js";
 import {insertionContext} from './insertion-context.js';
 import {compactUndo,expandUndo,validateUndoStorage,replacementUndo} from './undo-storage.js';
-// SPDX-License-Identifier: MPL-2.0
 import {executeImageBatch} from './image-batch.js';
 import {validateReplacementOrigins} from './replacement-affiliation.js';
 import {prepareTextReplacement} from './text-replacement.js';
@@ -878,6 +879,8 @@ function execute(state, intent, action, materialization = null) {
         rememberBoundary(state, id, block, offset),
       fail: (m) => new Conflict(m),
     });
+  if (["codeLanguage", "codeLanguageActive"].includes(intent.kind))
+    return executeCodeLanguage(state,intent,action,{write:field=>writable(state,field),fail:m=>new Conflict(m)});
   if (["tableFormat", "tableFormatActive"].includes(intent.kind))
     return executeTableFormat(state, intent, action, {
       write: (field) => writable(state, field),
@@ -1089,6 +1092,7 @@ export function apply(state, op, validateFinalShape = null) {
         "listMarkerActive",
         "listNumberingActive",
         "richForestActive",
+        "codeLanguageActive",
         "tableFormatActive",
         "restoreDistributedWidths",
         "restoreRowHeight",
@@ -1140,6 +1144,7 @@ export function apply(state, op, validateFinalShape = null) {
     } catch (error) {
       throw new Conflict(error.message);
     }
+  if (op.intent.kind === "codeLanguage")validateCodeLanguage(state,op.intent);
   if (op.intent.kind === "tableFormat")
     try {
       validateTableFormat(state, op.intent);
@@ -1271,6 +1276,7 @@ export function validate(state, incremental = false) {
   validateMarkers(state);
   validateListNumberings(state);
   validateTableFormats(state);
+  validateCodeLanguages(state);
   validateRowHeightOwners(state);
   validateColumnWidthOwners(state);
   validateTableOrderOwners(state);

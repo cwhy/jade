@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+import {structuralLanguageShape} from "./code-language.js";
 import { initializeFragmentMedia, mediaContentShape } from "./media.js";
 import {
   attachedSourcePaste,
@@ -204,7 +205,7 @@ const shape = (node) => {
     richRetiredBy,
     richLifecycle,
     ...rest
-  } = structuralMarkerShape(structuralNumberingShape(node));
+  } = structuralLanguageShape(structuralMarkerShape(structuralNumberingShape(node)));
   return { ...rest, placement: placement ?? null };
 };
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);

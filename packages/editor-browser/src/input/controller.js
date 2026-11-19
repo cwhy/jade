@@ -77,6 +77,7 @@ export function bindSelectionController({
       ![
         "richInsert",
         "insertBlock",
+        "codeLanguage",
         "previewImageSize",
         "imageSize",
         "previewCut",
@@ -1687,6 +1688,25 @@ export function bindSelectionController({
         notice(error.message);
         return false;
       }
+    },
+    beginCodeLanguage(block) {
+      try {
+        const c=client();
+        if(disposed||composing||!planners.codeLanguage||c.state.nodes[block]?.type!=="code"||!c.state.nodes[block].live)throw new ReviewRequired("Choose an available code block after composition");
+        let range;
+        try { range=capture(c.state); } catch {}
+        if(!range||range.kind||range.slices.length!==1||range.slices[0].block!==block)
+          range=captureRange(c.state,{block,offset:0},{block,offset:0});
+        return {client:c,epoch:c.state.epoch,block,range};
+      } catch(error) {notice(error.message);return null;}
+    },
+    commitCodeLanguage(lease,language) {
+      try {
+        const c=client();
+        if(disposed||composing||!lease||lease.client!==c||lease.epoch!==c.state.epoch)throw new ReviewRequired("Code editing session changed; reopen the language picker");
+        execute((state,r,op)=>({...planners.codeLanguage(state,lease.block,language,op),selection:{epoch:r.epoch,anchor:r.anchor,focus:r.focus}}),lease.range);
+        return true;
+      } catch(error) {notice(error.message);return false;}
     },
     beginImageSize(image) {
       try {

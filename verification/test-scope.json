@@ -93,7 +93,8 @@
     "whole-item-retention.test.mjs",
     "whole-text-replace.test.mjs",
     "image-presence-ownership.test.mjs",
-    "code-input.test.mjs"
+    "code-input.test.mjs",
+    "code-language.test.mjs"
   ],
   "included_files": [
     "attached-source-peer-gate.test.mjs",

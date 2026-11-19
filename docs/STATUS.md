@@ -1,3 +1,11 @@
+## November 19 code-language model candidate
+
+Alpha.17 adds owned language contributions and controller leases (codec49/wire55).
+The exact alpha.17 artifact passes 38 internal / 3,677 packaged contracts across
+95 roots (`verify-GhXzau`) and six isolated browser checks against its installed
+external consumer. Host picker/highlighting and application integration
+are pending. See [CODE_LANGUAGE.md](CODE_LANGUAGE.md).
+
 ## November 19 literal code input candidate
 
 Alpha.16 retains codec48 / wire54. Enter carries authored indentation; literal
