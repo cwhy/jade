@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+import { isRetainedListSuffix } from "./list-suffix.js";
 import { orderedCreationPlacements } from "./creation-placement-projection.js";
 import { appendItemPlacement } from "./item-placement.js";
 import { enterMarker } from "./list-marker.js";
@@ -163,9 +164,7 @@ export function planListEnter(state, range, op) {
     at.offset > 0 &&
     item.children.length > 1 &&
     !list(child) &&
-    !item.children
-      .slice(1)
-      .every((id) => ["code", "image"].includes(state.nodes[id]?.type))
+    !isRetainedListSuffix(state, item.children.slice(1))
   )
     throw new ReviewRequired(
       "List Enter beside mixed attachments needs a structural review",

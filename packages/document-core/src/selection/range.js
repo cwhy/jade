@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: MPL-2.0
+import { documentView } from "../document/read.js";
+import { planLogicalReplacement } from "../document/edit.js";
 import { selectionStructure } from "./structure.js";
+import {formatReader} from "../text/format-store.js";
 import { visible } from "../text/formatting-contributions.js";
 // Logical range capture/planning. No DOM, offsets persisted across edits, or new storage commands.
 import {
@@ -19,8 +22,8 @@ function owner(state, id) {
   return selectionStructure(state).parent(id);
 }
 function point(state, p) {
-  const n = state.nodes[p.block],
-    replica = n?.live && n.text && state.replicas[n.text];
+  const view=documentView(state), n = view.node(p.block),
+    replica = n?.live && n.text && {length:view.length(p.block)};
   if (
     !replica ||
     !Number.isInteger(p.offset) ||
@@ -29,7 +32,7 @@ function point(state, p) {
   )
     throw new ReviewRequired("Invalid selection endpoint");
   return {
-    gap: gapAt(state, p.block, p.offset),
+    gap: view.gapAt(p.block, p.offset),
     block: p.block,
     offset: p.offset,
   };
@@ -53,21 +56,22 @@ export function captureRange(state, anchor, focus) {
     structure.position(end.block) + 1,
   );
   const slices = blocks.map((block, i) => {
-    const n = state.nodes[block],
+    const n = structure.node(block),
       from = i === 0 ? start.offset : 0,
-      to = i === blocks.length - 1 ? end.offset : state.replicas[n.text].length;
+      to = i === blocks.length - 1 ? end.offset : structure.length(block);
     return {
       block,
       type: n.type,
       parent: structure.parent(block)?.id,
       from,
       to,
-      atoms: from === to ? [] : clone(text(state, block).slice(from, to)),
+      atoms: from === to ? [] : clone(structure.text(block).slice(from, to)),
     };
   });
   // Object/container boundaries are explicit. Text deletion never removes grid/list/image objects.
   return {
     version: 1,
+    ...(blocks.some(id=>structure.changed(id))?{logical:true}:{}),
     epoch: state.epoch,
     anchor: a.gap,
     focus: f.gap,
@@ -82,8 +86,8 @@ export function resolveRange(state, range) {
   if (range.epoch !== state.epoch)
     throw new ReviewRequired("Document changed; select a new destination");
   return {
-    anchor: resolveGap(state, range.anchor),
-    focus: resolveGap(state, range.focus),
+    anchor: documentView(state).resolveGap(range.anchor),
+    focus: documentView(state).resolveGap(range.focus),
   };
 }
 export function validateDestination(state, range) {
@@ -118,13 +122,8 @@ export function insertionMarks(state, range) {
   const p = resolveGap(state, range.start),
     gap = gapAt(state, p.block, p.offset),
     atom = findCharacter(state, gap.left || gap.right)?.atom;
-  return clone(
-    atom
-      ? state.formats?.[atom.id]
-        ? visible(state.formats[atom.id])
-        : atom.marks
-      : [],
-  );
+  const history=atom&&formatReader(state.formats)(atom.id);
+  return clone(atom ? history ? visible(history) : atom.marks : []);
 }
 export function planReplace(
   state,
@@ -134,6 +133,7 @@ export function planReplace(
   { strict = false, inheritedMarks } = {},
 ) {
   fragment = validateFragment(fragment);
+  if(range.logical)return planLogicalReplacement(state,range,fragment,op,{strict,inheritedMarks});
   if (strict) validateDestination(state, range);
   if (range.epoch !== state.epoch)
     throw new ReviewRequired("Document epoch changed");

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MPL-2.0
+import {documentView} from "../document/read.js";
 import {imageCopy} from "../model/image-size.js";
 import { text } from "../model/engine.js";
 import { resolveBlockRange } from "../selection/blocks.js";
-import { listMarkers } from "../model/list-marker.js";
 import { validateDestination, ReviewRequired } from "../selection/range.js";
 import { selectionStructure } from "../selection/structure.js";
 import { validateFragment, MIME, plainText, htmlText } from "../fragment.js";
@@ -19,7 +19,7 @@ export function copyRange(state, input) {
   if (range.collapsed) return null;
   const structure = selectionStructure(state),
     scope = (id) => {
-      for (let n = state.nodes[id]; n; n = structure.parent(n.id))
+      for (let n = documentView(state).node(id); n; n = structure.parent(n.id))
         if (["doc", "cell"].includes(n.type)) return n;
     };
   const first = range.slices[0],
@@ -51,7 +51,7 @@ export function copyRange(state, input) {
   // list wrapper to carry numbering. Orphan ancestor scaffolds are reviewed.
   const ancestors = (id) => {
     const result = [];
-    for (let n = state.nodes[id]; n; n = structure.parent(n.id)) {
+    for (let n = documentView(state).node(id); n; n = structure.parent(n.id)) {
       result.push(n);
       if (n.id === container.id) break;
     }
@@ -70,7 +70,7 @@ export function copyRange(state, input) {
   let cursor = 0;
   function index(n) {
     positions.set(n.id, cursor++);
-    for (const id of n.children || []) index(state.nodes[id]);
+    for (const id of n.children || []) index(documentView(state).node(id));
   }
   index(root);
   const lo = positions.get(first.block),
@@ -92,7 +92,7 @@ export function copyRange(state, input) {
       const ids = [];
       function collect(x) {
         ids.push(positions.get(x.id));
-        for (const id of x.children || []) collect(state.nodes[id]);
+        for (const id of x.children || []) collect(documentView(state).node(id));
       }
       collect(n);
       if (ids.some((p) => p >= lo && p <= hi))
@@ -104,7 +104,7 @@ export function copyRange(state, input) {
     if (["ordered_list", "bullet_list"].includes(n.type))
       return listGroups(state, n, visit);
     const children = n.children.flatMap((id) => {
-      const v = visit(state.nodes[id]);
+      const v = visit(documentView(state).node(id));
       return v === null ? [] : Array.isArray(v) ? v : [v];
     });
     if (!children.length) return null;
@@ -120,13 +120,13 @@ export function copyRange(state, input) {
       result.order =
         (n.order || 1) +
         n.children.findIndex((id) => {
-          const x = state.nodes[id];
+          const x = documentView(state).node(id);
           return x.children?.some((c) => selected.has(c) || hasSelected(c));
         });
     return result;
   }
   function hasSelected(id) {
-    const n = state.nodes[id];
+    const n = documentView(state).node(id);
     return selected.has(id) || (n.children || []).some(hasSelected);
   }
   const result = visit(root),
@@ -152,7 +152,7 @@ export function copyRange(state, input) {
     edges: {
       start: first.from === 0 ? "boundary" : "partial",
       end:
-        last.to === state.replicas[state.nodes[last.block].text].length ||
+        last.to === documentView(state).length(last.block) ||
         last.to === 0
           ? "boundary"
           : "partial",
@@ -167,7 +167,7 @@ export function copyRange(state, input) {
 }
 
 function leaf(state, s) {
-  const n = state.nodes[s.block],
+  const n = documentView(state).node(s.block),
     content = [];
   for (const atom of s.atoms) {
     const marks = (atom.marks || []).map((m) =>
@@ -200,8 +200,8 @@ function leaf(state, s) {
 
 function listGroups(state, list, visit) {
   const groups = [];
-  for (const marker of listMarkers(state, list.id)) {
-    const item = visit(state.nodes[marker.id]);
+  for (const marker of documentView(state).listMarkers(list.id)) {
+    const item = visit(documentView(state).node(marker.id));
     if (!item) continue;
     let group = groups.at(-1);
     if (
@@ -236,14 +236,14 @@ export function copyBlocks(state, selection) {
     if (n.type === "list_item")
       return {
         type: n.type,
-        children: n.children.flatMap((id) => block(state.nodes[id])),
+        children: n.children.flatMap((id) => block(documentView(state).node(id))),
       };
     throw new ReviewRequired("Copy this structure using whole-cell selection");
   }
   const parent = state.nodes[range.parent];
   const blocks = ["ordered_list", "bullet_list"].includes(parent.type)
     ? listGroups(state, parent, (n) => (selected.has(n.id) ? block(n) : null))
-    : range.blocks.flatMap((id) => block(state.nodes[id]));
+    : range.blocks.flatMap((id) => block(documentView(state).node(id)));
   const fragment = validateRichSlice({
     version: 1,
     edges: { start: "boundary", end: "boundary" },

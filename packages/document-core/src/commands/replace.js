@@ -17,6 +17,7 @@ import { paragraphForEnter } from "../model/list-boundary.js";
 import { validateFragment, plainText } from "../fragment.js";
 export function planReplace(state, range, fragment, op, options = {}) {
   fragment = validateFragment(fragment);
+  if(range.logical)return internalPlan(state,range,fragment,op,options);
   // LS-07 / CP-03: explicit plain paste keeps literal line breaks in the
   // selected list paragraph. It does not create a bullet for each input line
   // or infer hierarchy from indentation. Rich structural paste stays separate.

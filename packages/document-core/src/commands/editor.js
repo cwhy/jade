@@ -8,6 +8,7 @@ export { planReplace } from "./replace.js";
 export { planNavigateCell } from "./table-navigation.js";
 export { planInsertRow } from "./table-insertion.js";
 export function planDelete(state, range, direction, op) {
+  if(range.logical)return baseDelete(state,range,direction,op);
   const at = resolveGap(state, range.start),
     node = state.nodes[at.block];
   if (

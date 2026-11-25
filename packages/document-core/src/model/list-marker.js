@@ -122,3 +122,9 @@ export function structuralMarkerShape(node) {
   const { markerLayers, ...rest } = node;
   return rest;
 }
+
+// A captured marker slot keeps its original source/wrapper identities even if
+// their boundary has subsequently rejoined. This accessor does not revive them.
+export function retainedMarker(state,item,block,fallback) {
+  return projectMarker(state.nodes[item],fallback,state.nodes[block]);
+}

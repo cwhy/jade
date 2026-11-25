@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
+import { retainedScopedBody } from "./text-conversion.js";
+import { isRetainedListSuffix } from "./list-suffix.js";
 import { creationProseContainer } from "./creation-extent.js";
 import { validateFlowFamily } from "./flow-placement.js";
 import { isImmutable } from "./immutable.js";
@@ -26,13 +28,15 @@ export function validateListFamilies(state) {
       validateFlowFamily(state, f);
     if (
       !f ||
+      (f.textType !== undefined && (f.kind !== "prose" || f.textType !== "code" || state.nodes[f.source]?.type !== "code" || f.layout?.blocks.some(id => state.nodes[id]?.type !== "code"))) ||
       f.id !== id ||
       typeof f.source !== "string" ||
       (["prose", "flow"].includes(f.kind)
         ? typeof f.parent !== "string" ||
           !(
             ["doc", "cell"].includes(state.nodes[f.parent]?.type) ||
-            creationProseContainer(state, f.source, state.nodes[f.parent])
+            creationProseContainer(state, f.source, state.nodes[f.parent]) ||
+            (state.nodes[f.parent]?.type === "list_item" && retainedScopedBody(state,f.source))
           )
         : typeof f.homeItem !== "string" ||
           typeof f.list !== "string" ||
@@ -60,7 +64,7 @@ export function validateListFamilies(state) {
         child.live !== !!child.children.length ||
         !f.rest?.length ||
         f.rest.includes(f.childList) ||
-        !f.rest.every((id) => ["code", "image"].includes(state.nodes[id]?.type))
+        !isRetainedListSuffix(state, f.rest)
       )
         throw Error("Invalid generated attachment child list");
     }

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+import {validateFormats} from "../text/format-store.js";
 import {STORAGE_CODEC} from "./codec.js";
 import { validateCreationPlacements } from "./creation-placement.js";
 import { validateCreations } from "./creation-lifecycle.js";
@@ -131,6 +132,7 @@ function checkReplica(replica, runs) {
   if (stable) replicasChecked.set(replica, [...dependencies]);
 }
 export function validateChanged(state, full) {
+  validateFormats(state);
   validateCreations(state);
   validateCreationPlacements(state);
   validateListFamilies(state);

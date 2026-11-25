@@ -1,3 +1,9 @@
+# Alpha.22 integration candidate
+
+Current source: codec54 / wire60. See [text conversion](TEXT_CONVERSION.md) for invariants, supported compatibility and limits. The final installed-package suite passes 4,535 contracts across 116 roots and 40 internal checks. All five packages are installed into an independent consumer without workspace symlinks. Five public-site checks pass. The engine source is ready for coordinated application integration; deployment and broad product qualification remain separate. No npm registry packages were published.
+
+---
+
 # Current prototype checkpoint
 
 Alpha.18 adds automatic-language paste as one owned transaction (codec50/wire56).

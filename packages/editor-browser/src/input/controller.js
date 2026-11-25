@@ -36,7 +36,7 @@ import {
   validateFragment,
   MIME,
 } from "@cwhy/jade-core/fragment";
-import { resolveGap, text as modelText } from "@cwhy/jade-core/model";
+import { resolveGap, text as modelText, documentView } from "@cwhy/jade-core/document-read";
 import {
   planDelete,
   planEnter,
@@ -78,6 +78,8 @@ export function bindSelectionController({
         "richInsert",
         "insertBlock",
         "codeLanguage",
+        "previewConversion",
+        "conversion",
         "codePaste",
         "adjacentParagraph",
         "previewImageSize",
@@ -876,7 +878,7 @@ export function bindSelectionController({
         const c = client(),
           at = resolveGap(c.state, range.start);
         const structure = selectionStructure(c.state);
-        let node = c.state.nodes[at.block];
+        let node = documentView(c.state).node(at.block);
         if (node.type === "code") {
           event.preventDefault();
           execute(
@@ -1361,7 +1363,7 @@ export function bindSelectionController({
         if (!cell) {
           if (range?.kind === "cells") cell = range.focus;
           else if (range && !range.kind) {
-            let n = state.nodes[resolveGap(state, range.end).block];
+            let n = documentView(state).node(resolveGap(state, range.end).block);
             while (n && n.type !== "cell") n = structure.parent(n.id);
             cell = n?.id;
           }
@@ -1386,7 +1388,7 @@ export function bindSelectionController({
         let focus = cell;
         if (range.kind === "cells") focus = range.focus;
         else {
-          let n = state.nodes[resolveGap(state, range.end).block];
+          let n = documentView(state).node(resolveGap(state, range.end).block);
           while (n && n.type !== "cell") n = structure.parent(n.id);
           focus = n?.id || cell;
         }
@@ -1737,21 +1739,65 @@ export function bindSelectionController({
         return true;
       }catch(error){notice(error.message);return false;}
     },
+    beginTextConversion(target) {
+      try {
+        if (disposed || composing || !planners.previewConversion || !planners.conversion)
+          throw new ReviewRequired("Finish composition before changing text style");
+        const c = client(), range = capture(c.state), view = documentView(c.state);
+        if (range.kind || range.slices.some(s => view.isField(s.block)))
+          throw new ReviewRequired("Choose ordinary text blocks in one container");
+        const slices = range.slices.filter((s,i) => i === 0 || i < range.slices.length-1 || s.to > 0);
+        const parent = slices[0]?.parent;
+        if (!parent || !["doc","cell"].includes(view.node(parent)?.type) ||
+            slices.some(s => s.parent !== parent || !["paragraph","code"].includes(s.type)))
+          throw new ReviewRequired("Choose ordinary text blocks in one container");
+        if (slices.every(s => s.type === target))
+          throw new ReviewRequired("Selection already uses this text style");
+        const siblings = view.node(parent).children;
+        const first = siblings.indexOf(slices[0].block), last = siblings.indexOf(slices.at(-1).block);
+        const selected = siblings.slice(first,last+1);
+        if (first < 0 || last < first || selected.some(id => !["paragraph","code","image"].includes(view.node(id)?.type)))
+          throw new ReviewRequired("Choose text and images in one container");
+        const blocks = selected.flatMap(id => view.node(id).type === "image" ? [id] : view.group(id).blocks);
+        const preview = planners.previewConversion(c.state,parent,blocks,target);
+        return { client:c,epoch:c.state.epoch,range,preview };
+      } catch (error) { notice(error.message); return null; }
+    },
+    commitTextConversion(lease, {confirmLoss=false}={}) {
+      try {
+        const c=client();
+        if(disposed || composing || !lease || lease.client!==c || lease.epoch!==c.state.epoch)
+          throw new ReviewRequired("Editing session changed; review conversion again");
+        execute((state,r,op)=>({...planners.conversion(state,lease.preview,op,{confirmLoss}),
+          selection:{epoch:r.epoch,anchor:r.anchor,focus:r.focus}}),lease.range);
+        return true;
+      } catch(error) {notice(error.message);return false;}
+    },
+    cancelTextConversion(lease) {
+      try {
+        const c=client();
+        if(disposed || composing || !lease || lease.client!==c || lease.epoch!==c.state.epoch)
+          throw new ReviewRequired("Editing session changed");
+        root.focus();install(c.state,lease.range);return true;
+      } catch(error) {notice(error.message);return false;}
+    },
     beginCodeLanguage(block) {
       try {
         const c=client();
-        if(disposed||composing||!planners.codeLanguage||c.state.nodes[block]?.type!=="code"||!c.state.nodes[block].live)throw new ReviewRequired("Choose an available code block after composition");
+        if(disposed||composing||!planners.codeLanguage||documentView(c.state).node(block)?.type!=="code"||!documentView(c.state).node(block).live)throw new ReviewRequired("Choose an available code block after composition");
         let range;
         try { range=capture(c.state); } catch {}
         if(!range||range.kind||range.slices.length!==1||range.slices[0].block!==block)
           range=captureRange(c.state,{block,offset:0},{block,offset:0});
-        return {client:c,epoch:c.state.epoch,block,range};
+        return {client:c,epoch:c.state.epoch,block,range,conversion:documentView(c.state).node(block).codeConversion??null};
       } catch(error) {notice(error.message);return null;}
     },
     commitCodeLanguage(lease,language) {
       try {
         const c=client();
         if(disposed||composing||!lease||lease.client!==c||lease.epoch!==c.state.epoch)throw new ReviewRequired("Code editing session changed; reopen the language picker");
+        const current=documentView(c.state).node(lease.block);
+        if(current?.type!=="code" || (current.codeConversion??null)!==lease.conversion)throw new ReviewRequired("Code conversion changed; reopen the language picker");
         execute((state,r,op)=>({...planners.codeLanguage(state,lease.block,language,op),selection:{epoch:r.epoch,anchor:r.anchor,focus:r.focus}}),lease.range);
         return true;
       } catch(error) {notice(error.message);return false;}

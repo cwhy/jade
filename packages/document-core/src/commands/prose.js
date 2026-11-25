@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
+import {documentView} from "../document/read.js";
+import {planLogicalEnter,planLogicalDelete} from "../logical-text.js";
+import {paragraphForEnter} from "../model/list-boundary.js";
 import { apply, gapAt, resolveGap, text } from "../model/engine.js";
 import {
   captureRange,
@@ -25,6 +28,13 @@ export function planDelete(state, range, direction, op) {
   if (!["backward", "forward"].includes(direction))
     throw new ReviewRequired("Unknown deletion direction");
   validateDestination(state, range);
+  if(range.logical){
+    if(!range.collapsed)return planReplace(state,range,plainFragment(''),op);
+    const parent=documentView(state).parent(range.slices[0].block).id;
+    const intent=planLogicalDelete(state,{parent,at:range.start},direction);
+    if(!intent)return noop(state,range);
+    const next=apply(state,{...op,intent});return {intent,state:next,after:range.start};
+  }
   if (!range.collapsed) return planReplace(state, range, plainFragment(""), op);
   const at = resolveGap(state, range.start),
     node = state.nodes[at.block],
@@ -97,6 +107,16 @@ export function planEnter(
   { soft = false, inheritedMarks } = {},
 ) {
   validateDestination(state, range);
+  if(range.logical){
+    const view=documentView(state),point=view.resolveGap(range.start),node=view.node(point.block);
+    if(soft||node.type==='code'){
+      const before=view.text(point.block).slice(0,point.offset).map(a=>a.char).join(''),line=before.slice(before.lastIndexOf('\n')+1),indent=node.type==='code'?line.match(/^[ \t]*/)[0]:'';
+      return planReplace(state,range,literal('\n'+indent),op,{inheritedMarks});
+    }
+    if(!range.collapsed)throw new ReviewRequired('Selected Body Enter across converted text is not qualified');
+    const intent=planLogicalEnter(state,{parent:view.parent(point.block).id,at:range.start}),next=apply(state,{...op,intent}),tail=paragraphForEnter(next,op.id);
+    return {intent,state:next,after:gapAt(next,tail,0)};
+  }
   const at = resolveGap(state, range.start),
     node = state.nodes[at.block];
   if (soft || node.type === "code") {
@@ -162,7 +182,7 @@ export function planCodeIndent(state, range, op, { outdent = false } = {}) {
   if (range.collapsed && !outdent)
     return planReplace(state, range, literal("  "), op);
   const slice = range.slices[0],
-    atoms = text(state, slice.block),
+    atoms = documentView(state).text(slice.block),
     starts = [0];
   for (let i = 0; i < atoms.length; i++)
     if (atoms[i].char === "\n") starts.push(i + 1);
@@ -179,7 +199,7 @@ export function planCodeIndent(state, range, op, { outdent = false } = {}) {
     } else
       intents.push({
         kind: "insert",
-        at: gapAt(state, slice.block, offset),
+        at: documentView(state).gapAt(slice.block, offset),
         text: "  ",
         marks: [],
       });

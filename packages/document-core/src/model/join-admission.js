@@ -3,7 +3,7 @@
 // Other semantic commands use the shared admission path.
 import * as engine from "./engine.js";
 import * as base from "./admission.js";
-import { joinTarget } from "./join-ledger.js";
+import { joinTarget, styleRetainsBoundary } from "./join-ledger.js";
 export * from "./admission.js";
 export function apply(state, op) {
   if (!["listJoin", "proseJoin"].includes(op?.intent?.kind))
@@ -34,6 +34,16 @@ export function apply(state, op) {
   )
     fail("forged join boundary");
   if (!state.nodes[t.right]) fail("unknown join paragraph");
+  let retained;
+  try {
+    retained = styleRetainsBoundary(state, {
+      ...t,
+      ...(op.intent.kind === "proseJoin" ? { mode: "prose" } : {}),
+    });
+  } catch (error) {
+    fail(error.message);
+  }
+  if (retained) fail("conversion crosses an unselected joined source");
   base.validateDocumentShape(state);
   return engine.apply(state, op, base.validateDocumentShape);
 }

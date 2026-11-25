@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+import {documentView} from "../document/read.js";
 import { resolveRange, ReviewRequired } from "../selection/range.js";
 import { findCharacter, text } from "../model/engine.js";
 import { summarizeFormat, planInlineFormat } from "./inline-format.js";
@@ -15,7 +16,7 @@ function selected(state, range) {
   for (const id of ids) {
     const found = findCharacter(state, id);
     if (!found) continue;
-    if (state.nodes[found.block].type === "code") {
+    if (documentView(state).node(documentView(state).sourceId(found.block)).type === "code") {
       skippedCode = true;
       continue;
     }

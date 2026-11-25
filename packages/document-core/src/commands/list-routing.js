@@ -31,6 +31,7 @@ function context(state, range) {
   };
 }
 export function planEnter(state, range, op, options = {}) {
+  if(range.logical)return publicPlan(proseEnter(state,range,op,options));
   const { node, parent } = context(state, range);
   const continuation =
     node.type === "paragraph" &&
@@ -92,6 +93,14 @@ export function planEnter(state, range, op, options = {}) {
   return publicPlan(proseEnter(state, range, op, options));
 }
 export function planDelete(state, range, direction, op) {
+  if (range.logical) {
+    const view = selectionStructure(state), at = view.resolveGap(range.start);
+    if (range.collapsed && view.node(at.block).type === "paragraph" &&
+        ["doc", "cell"].includes(view.parent(at.block)?.type) &&
+        (direction === "backward" ? at.offset === 0 : at.offset === view.length(at.block)))
+      return planProseJoin(state, range, direction, op);
+    return publicPlan(proseDelete(state, range, direction, op));
+  }
   const { at, node, parent } = context(state, range);
   if (
     direction === "backward" &&

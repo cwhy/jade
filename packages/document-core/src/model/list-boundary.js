@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
+import { retainedScopedBody } from "./text-conversion.js";
+import { isRetainedListSuffix } from "./list-suffix.js";
 import {
   creationProseContainer,
   creationProseParent,
@@ -129,13 +131,15 @@ function projectListBoundary(state, intent, action, host) {
       p = node(at.block),
       item = parent(p.id),
       list = item && parent(item.id);
-    const prose = intent.kind === "proseEnter";
+    const scopedBody = intent.kind === "logicalEnter" && retainedScopedBody(state,p.id);
+    const prose = ["proseEnter","logicalEnter"].includes(intent.kind) && !(scopedBody && item?.type === "list_item" && item.children[0] === p.id);
     if (
-      p.type !== "paragraph" ||
+      (p.type !== "paragraph" && !(intent.kind === "logicalEnter" && p.type === "code")) ||
       (prose
         ? !(
             ["doc", "cell"].includes(item?.type) ||
-            creationProseContainer(state, p.id, item)
+            creationProseContainer(state, p.id, item) ||
+            (scopedBody && item?.type === "list_item")
           )
         : item?.type !== "list_item" ||
           !isList(list) ||
@@ -153,6 +157,7 @@ function projectListBoundary(state, intent, action, host) {
       family = {
         id: `${action}:family`,
         kind: "prose",
+        ...(p.type === "code" ? {textType:"code"} : {}),
         source: p.id,
         parent: item.id,
         order: ["home"],
@@ -165,7 +170,7 @@ function projectListBoundary(state, intent, action, host) {
       const generated = attachments.length && !isList(child);
       if (
         generated &&
-        !attachments.every((id) => ["code", "image"].includes(node(id).type))
+        !isRetainedListSuffix(state, attachments)
       )
         throw fail("List Enter beside mixed content requires review");
       const generatedId = generated ? `${action}:attachment-children` : null;
@@ -231,7 +236,8 @@ function projectListBoundary(state, intent, action, host) {
     if (
       !(
         ["doc", "cell"].includes(list.type) ||
-        creationProseContainer(state, family.source, list)
+        creationProseContainer(state, family.source, list) ||
+        (list.type === "list_item" && retainedScopedBody(state,family.source))
       ) ||
       start < 0 ||
       !same(
@@ -239,7 +245,7 @@ function projectListBoundary(state, intent, action, host) {
         layout.blocks,
       ) ||
       sourceNodes.some(
-        (n) => n.type !== "paragraph" || parent(n.id)?.id !== list.id,
+        (n) => n.type !== (family.textType || "paragraph") || parent(n.id)?.id !== list.id,
       )
     )
       throw fail("Prose family acquired a structural dependency");
@@ -362,7 +368,7 @@ function projectListBoundary(state, intent, action, host) {
     cuts = [0, ...offsets, total];
   for (const block of blocks)
     if (!state.nodes[block])
-      write("nodes")[block] = { id: block, type: "paragraph", live: false };
+      write("nodes")[block] = { id: block, type: family.textType || "paragraph", live: false };
   repartition(
     layout.blocks,
     blocks.map((block, i) => ({

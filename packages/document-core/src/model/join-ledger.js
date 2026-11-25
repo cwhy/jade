@@ -2,6 +2,7 @@
 // Codec-10 experiment: logical deletion contributions are authoritative; visible
 // text/tree joins are reversible projections. Never expose projection inverses
 // as public operations or mix these checkpoints with earlier codecs.
+import { conversionJoinCompatible, bodyConversionFor } from "./text-conversion.js";
 import { treeParent } from "./tree.js";
 import { creationProseParent } from "./creation-extent.js";
 const list = (n) => ["ordered_list", "bullet_list"].includes(n?.type);
@@ -20,6 +21,21 @@ export function joinTarget(state, right) {
       if (c.block === right)
         return { id: c.id, right, creator: { family: f.id, cut: c.id } };
   return { id: `seed:${right}`, right, creator: null };
+}
+// Boundary identity chooses its retained structural grammar; presentation style
+// does not authorize a different join or a new neighbouring source.
+export function boundaryJoinIntent(state, target) {
+  const existing = state.listJoins[target.id],
+    parent = treeParent(state, target.right);
+  const mode = existing
+    ? existing.mode || "list"
+    : parent?.type === "list_item"
+      ? "list"
+      : ["doc", "cell"].includes(parent?.type)
+        ? "prose"
+        : null;
+  if (!mode) throw Error("Boundary source context is unavailable");
+  return { kind: mode === "list" ? "listJoin" : "proseJoin", target };
 }
 export function executeJoinContribution(
   state,
@@ -91,8 +107,16 @@ function visibleCreator(state, b) {
 function preceding(state, right, fail) {
   const item = treeParent(state, right),
     owner = item && treeParent(state, item.id);
-  if (!item || item.children[0] !== right || !list(owner))
+  if (item?.type !== "list_item" || !list(owner))
     throw fail("Join right side changed structure");
+  const inItem = item.children.indexOf(right);
+  if (inItem > 0) {
+    const previous = state.nodes[item.children[inItem - 1]];
+    if (previous?.type !== "paragraph")
+      throw fail("Join would cross an attachment or descendant");
+    return previous.id;
+  }
+  if (inItem !== 0) throw fail("Join right side changed structure");
   const index = owner.children.indexOf(item.id);
   if (index === 0) {
     const parent = treeParent(state, owner.id);
@@ -100,10 +124,16 @@ function preceding(state, right, fail) {
       return parent.children[0];
     return null;
   }
-  const previous = state.nodes[owner.children[index - 1]];
-  if (previous.children.length !== 1)
-    throw fail("Join would cross an attachment or descendant");
-  return previous.children[0];
+  // A nested list's final text is adjacent to the next outer item in document
+  // order. Descend only through trailing lists; images/code are hard barriers.
+  let previous = state.nodes[owner.children[index - 1]];
+  while (previous?.type === "list_item") {
+    const last = state.nodes[previous.children.at(-1)];
+    if (last?.type === "paragraph") return last.id;
+    if (!list(last) || !last.children.length) break;
+    previous = state.nodes[last.children.at(-1)];
+  }
+  throw fail("Join would cross an attachment or descendant");
 }
 function projectOne(state, b, action, host) {
   if (b.mode === "prose") {
@@ -131,8 +161,15 @@ function projectOne(state, b, action, host) {
         (owner.id === b.parent && ["doc", "cell"].includes(owner.type)) ||
         retained
       ) ||
-      left?.type !== "paragraph" ||
-      right?.type !== "paragraph"
+      !(
+        (left?.type === "paragraph" && right?.type === "paragraph") ||
+        ([left, right].every(n => ["paragraph", "code"].includes(n?.type)) &&
+          [left, right].every(n => (bodyConversionFor(state, n.id)?.target || n.type) === "paragraph")) ||
+        (left?.type === "code" &&
+          right?.type === "code" &&
+          family?.textType === "code" &&
+          family.layout.blocks.includes(left.id))
+      )
     )
       throw host.fail("Prose join would cross a structural boundary");
     return {
@@ -153,13 +190,30 @@ function projectOne(state, b, action, host) {
     item = treeParent(state, leftId),
     owner = treeParent(state, item.id),
     rightItem = treeParent(state, right.id);
+  if (item.id === rightItem.id) {
+    if (left.type !== "paragraph" || right.type !== "paragraph")
+      throw host.fail("Join requires adjacent paragraph text");
+    return {
+      kind: "batch",
+      intents: [
+        host.execute(
+          { kind: "join", left: left.id, right: right.id },
+          `${action}:part:0`,
+          { boundary: b.id },
+        ),
+      ],
+    };
+  }
   const child = state.nodes[item.children[1]],
     firstChild = list(child) && child.children[0] === rightItem.id,
     rightChild = state.nodes[rightItem.children[1]];
   if (
     left.type !== "paragraph" ||
     right.type !== "paragraph" ||
-    !supportedJoinLeft(state, item, firstChild) ||
+    !(
+      supportedJoinLeft(state, item, firstChild) ||
+      item.children.at(-1) === left.id
+    ) ||
     (rightItem.children.length > 1 &&
       (!list(rightChild) || rightItem.children.length !== 2)) ||
     (firstChild && rightChild)
@@ -198,6 +252,15 @@ function projectOne(state, b, action, host) {
   if (firstChild && !state.nodes[child.id].children.length) prune(child.id);
   return { kind: "batch", intents: inverses };
 }
+export function styleRetainsBoundary(state, b) {
+  if (!state.nodes[b.right]?.live) return false;
+  const parent = treeParent(state, b.right);
+  const left =
+    b.mode === "prose"
+      ? parent?.children[parent.children.indexOf(b.right) - 1]
+      : preceding(state, b.right, (message) => new Error(message));
+  return !!left && !conversionJoinCompatible(state, left, b.right);
+}
 export function projectJoins(state, action, host) {
   const order = [];
   function walk(id) {
@@ -217,6 +280,7 @@ export function projectJoins(state, action, host) {
   for (const [i, b] of joins.entries()) {
     if (!state.nodes[b.right]?.live)
       throw host.fail("Active boundary has no logical right partition");
+    if (styleRetainsBoundary(state, b)) continue;
     const inverse = projectOne(state, b, `${action}:project:${i}`, host);
     host.write("joinProjection").push({ boundary: b.id, inverse });
   }
@@ -260,7 +324,7 @@ export function validateJoins(state) {
       !b.suspendedBy &&
       !!visibleCreator(state, b) &&
       Object.values(b.contributions).some((c) => c.active);
-    if (active !== projected.has(id))
+    if ((active && !styleRetainsBoundary(state, b)) !== projected.has(id))
       throw Error("Join projection disagrees with ledger");
   }
 }
@@ -307,4 +371,34 @@ export function canReuseJoinProjection(state, intent, host) {
   }
   state.joinProjection.forEach((p) => check(p.inverse));
   return safe;
+}
+
+// Read the retained prose sources behind current physical join projection.
+// Ownership is certified by this module's projection ledger, never inferred from
+// similar text or an arbitrary dead node. Reverse projection order reconstructs
+// source order even when several empty cuts share the same physical offset.
+export function proseProjectionSources(state, parent) {
+  const children = [...(state.nodes[parent]?.children || [])];
+  const owner = new Map(children.map((id) => [id, id]));
+  for (const projection of [...state.joinProjection].reverse()) {
+    const entry = state.listJoins[projection.boundary];
+    if (entry?.mode !== "prose" || entry.parent !== parent) continue;
+    const marker = state.boundaries[`projection-cut:${entry.id}`];
+    const at = children.indexOf(marker?.block);
+    if (
+      at < 0 ||
+      !state.nodes[marker.block]?.live ||
+      state.nodes[entry.right]?.live
+    )
+      throw Error("Invalid projected prose source");
+    children.splice(at + 1, 0, entry.right);
+    owner.set(entry.right, marker.block);
+  }
+  const sources = new Map();
+  for (const id of children) {
+    const visible = owner.get(id);
+    if (!sources.has(visible)) sources.set(visible, []);
+    sources.get(visible).push(id);
+  }
+  return { children, owner, sources };
 }

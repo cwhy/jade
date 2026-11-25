@@ -1,4 +1,8 @@
 // SPDX-License-Identifier: MPL-2.0
+import { validateDisplayJoin } from "./display-boundary.js";
+import {validateTextSections} from "./conversion-sections.js";
+import {validateIdentitySpans} from "../text/identity-spans.js";
+import {validateListConversion,validateConversion,validateConversionReview,validateLogicalEnter} from "./text-conversion.js";
 import {validateTextReplacement} from './text-replacement.js';
 import {fieldEntries,validateFieldCreate} from './text-fields.js';
 import {validateImageBatch} from './image-batch.js';
@@ -257,6 +261,19 @@ export function validatePublicIntent(
     case "creationParagraphExit":
       if(inBatch || Object.keys(intent).some(k=>!["kind","root","creation","basis"].includes(k)) || !(intent.basis===null || typeof intent.basis==="string"))fail("invalid paragraph exit");
       fields("root","creation");return;
+    case "textSectionsConvert":
+      if(inBatch)fail("Section conversion must be a complete operation");
+      try { validateTextSections(state,intent); } catch(error) { fail(error.message); } return;
+    case "listCodeConvert":
+      if(inBatch)fail("List conversion must be a complete operation");
+      validateListConversion(state,intent);return;
+    case "displayJoin":
+      if(inBatch)fail("Display join must be a complete operation");
+      try {validateDisplayJoin(state,intent);} catch(error) {fail(error.message);}return;
+    case "textConvert":
+      if(intent.scope!==undefined && !intent.basis && !intent.bases)fail("Scoped conversion requires its complete selection");
+      if(inBatch)fail("Conversion must be a complete operation");
+      try {validateConversionReview(state,intent);} catch(error) {fail(error.message);}return;
     case "insertCodeBlock":
       if(inBatch || Object.keys(intent).some(k=>!["kind","block"].includes(k)))fail("invalid code insertion boundary");
       fields("block");return;
@@ -264,10 +281,12 @@ export function validatePublicIntent(
       if(inBatch || Object.keys(intent).some(k=>!["kind","block","side"].includes(k)) || !["before","after"].includes(intent.side))fail("invalid paragraph boundary");
       fields("block");return;
     case "codeLanguageAuto":
-      if (!inBatch || Object.keys(intent).some(k=>!["kind","block","language","revision"].includes(k)) || typeof intent.language!=="string" || !Number.isSafeInteger(intent.revision) || intent.revision<0)fail("invalid automatic code language");
+      if(intent.conversion!==undefined && !id(intent.conversion))fail("invalid code conversion witness");
+      if (!inBatch || Object.keys(intent).some(k=>!["kind","block","language","revision","conversion"].includes(k)) || typeof intent.language!=="string" || !Number.isSafeInteger(intent.revision) || intent.revision<0)fail("invalid automatic code language");
       fields("block");return;
     case "codeLanguage":
-      if (Object.keys(intent).some(k=>!["kind","block","language"].includes(k)) || typeof intent.language!=="string")fail("invalid code language");
+      if(intent.conversion!==undefined && !id(intent.conversion))fail("invalid code conversion witness");
+      if (Object.keys(intent).some(k=>!["kind","block","language","conversion"].includes(k)) || typeof intent.language!=="string")fail("invalid code language");
       fields("block");return;
     case "tableFormat":
       if (
@@ -389,6 +408,9 @@ export function validatePublicIntent(
       )
         fail("invalid cell clear");
       return;
+    case "logicalEnter":
+      if(inBatch)fail("Logical Enter must be complete");
+      checkGap(state,intent.at);validateLogicalEnter(state,intent);return;
     case "proseEnter":
       if (
         inBatch ||
@@ -511,7 +533,11 @@ export function validatePublicIntent(
       if (!ids(intent.ids)) fail("invalid deletion identities");
       return;
     case "format":
-      if (!ids(intent.ids) || !id(intent.property)) fail("invalid formatting");
+      if(!id(intent.property))fail("invalid formatting");
+      if(intent.idSpans!==undefined){
+        if(intent.ids!==undefined)fail("ambiguous formatting identities");
+        validateIdentitySpans(state,intent.idSpans,{unique:true});
+      }else if(!ids(intent.ids))fail("invalid formatting");
       checkPublicFormat(intent.property, intent.value);
       return;
     case "undo":

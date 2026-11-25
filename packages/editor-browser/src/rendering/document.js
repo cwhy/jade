@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-import { listMarkers } from "@cwhy/jade-core/list-marker";
-import { text } from "@cwhy/jade-core/model";
+import {documentView} from "@cwhy/jade-core/document-read";
 import { htmlText } from "@cwhy/jade-core/fragment";
 
 // Stable block elements. Replica/formats identities are invalidation keys, never
@@ -28,10 +27,11 @@ export function createDocumentRenderer(
     image: "figure",
   };
   const render = (state) => {
+    const view=documentView(state);
     const visited = new Set(),
       headerCells = new Set();
     function node(id, depth = 0) {
-      const n = state.nodes[id];
+      const n = view.node(id);
       if (!n?.live || visited.has(id) || !tags[n.type])
         throw Error("Invalid rendered structure");
       visited.add(id);
@@ -66,9 +66,9 @@ export function createDocumentRenderer(
         el.setAttribute("role", headerCells.has(id) ? "columnheader" : "cell");
       }
       if (n.text) {
-        const replica = state.replicas[n.text];
-        if (entry.replica !== replica || entry.formats !== state.formats) {
-          const atoms = text(state, id);
+        const signature=view.signature(id);
+        if(!entry.signature || signature.some((value,i)=>entry.signature[i]!==value) || signature.length!==entry.signature.length) {
+          const atoms = view.text(id);
           {
             // One DOM run per adjacent equal style, rather than per character.
             const runs = [];
@@ -99,7 +99,7 @@ export function createDocumentRenderer(
                 br.replaceWith(document.createTextNode("\n"));
             el.replaceChildren(...template.content.firstChild.childNodes);
           }
-          entry.replica = replica;
+          entry.signature = signature;
           entry.formats = state.formats;
         }
       }
@@ -138,7 +138,7 @@ export function createDocumentRenderer(
           children = n.children.map((id) => node(id, depth + (isList ? 1 : 0))),
           wanted = new Set(children);
         if (isList)
-          for (const [i, m] of listMarkers(state, n.id).entries()) {
+          for (const [i, m] of view.listMarkers(n.id).entries()) {
             const li = children[i];
             li.dataset.markerKind = m.type;
             li.style.listStyleType =
@@ -184,7 +184,7 @@ export function createDocumentRenderer(
   // Native composition owns DOM temporarily, including cancellation without a
   // model transaction. Reconcile that DOM even when model identities are equal.
   render.invalidate = () => {
-    for (const entry of entries.values()) entry.replica = undefined;
+    for (const entry of entries.values()) entry.signature = undefined;
   };
   return render;
 }

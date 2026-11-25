@@ -2,6 +2,7 @@
 // Whole-body interchange for host-owned copy/export workflows. Unlike clipboard
 // slices, this does not impose clipboard-sized grids or normalize literal text.
 // Account/title policy, authorization, asset bytes and publication are host work.
+import { documentView } from "./document/read.js";
 import { seed, text, validate } from "./model/engine.js";
 import { validateDocumentShape } from "./model/admission.js";
 import { runStart } from "./model/list-numbering.js";
@@ -38,9 +39,10 @@ function markerBaseline(node) {
 export function captureBodyContent(state) {
   validate(state);
   validateDocumentShape(state);
-  const assets = new Set();
+  const assets = new Set(),
+    view = documentView(state);
   function visit(id) {
-    const node = state.nodes[id];
+    const node = view.node(id);
     if (!node?.live || !own(attributes, node.type))
       throw Error("Unsupported document content");
     const attrs = {};
@@ -59,7 +61,7 @@ export function captureBodyContent(state) {
     if (node.text) {
       const content = [];
       let previous;
-      for (const atom of text(state, id)) {
+      for (const atom of view.text(id)) {
         const key = JSON.stringify(atom.marks);
         if (key === previous) content.at(-1).text += atom.char;
         else {

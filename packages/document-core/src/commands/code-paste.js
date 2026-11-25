@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+import { documentView } from "../document/read.js";
 import { apply, text } from "../model/engine.js";
 import { codeLanguageState, CODE_LANGUAGES } from "../model/code-language.js";
 import { literalFragment } from "../fragment.js";
@@ -20,14 +21,12 @@ export function planCodePaste(
     throw Error("Choose a code text range");
   if (!CODE_LANGUAGES.includes(language))
     throw Error("Unsupported detected code language");
+  const view = documentView(state),
+    node = view.node(range.slices[0].block);
   const block = range.slices[0].block,
     fragment = literalFragment(value),
     options = { plainText: true, strict: true, inheritedMarks };
-  if (
-    !value ||
-    codeLanguageState(state.nodes[block]).explicit ||
-    text(state, block).length
-  )
+  if (!value || codeLanguageState(node).explicit || view.length(block))
     return planReplace(state, range, fragment, op, options);
   const replacement = planReplace(
     state,
@@ -40,7 +39,13 @@ export function planCodePaste(
   const intent = {
     kind: "batch",
     intents: [
-      { kind: "codeLanguageAuto", block, language, revision: state.revision },
+      {
+        kind: "codeLanguageAuto",
+        block,
+        language,
+        revision: state.revision,
+        ...(node.codeConversion ? { conversion: node.codeConversion } : {}),
+      },
       replacement.intent,
     ],
   };

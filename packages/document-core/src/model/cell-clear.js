@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
+import { cellPresentationWitness } from "./source-lifecycle.js";
+import {formatEntries} from "../text/format-store.js";
 import { initializeFragmentMedia, mediaContentShape } from "./media.js";
 import { executeTableFormat } from "./table-format.js";
 import { validateGridFragment, validateGridAssets } from "../grid-fragment.js";
@@ -67,7 +69,7 @@ export function cellWitness(state, cells) {
   const values = [],
     indices = new Map(),
     runs = [];
-  const entries = Object.entries(state.formats || {})
+  const entries = Array.from(formatEntries(state.formats))
     .filter(([id]) => inPieces(pieces, id))
     .map(([id, value]) => ({ ...splitId(id), value }))
     .sort((a, b) =>
@@ -90,8 +92,10 @@ export function cellWitness(state, cells) {
       last.length++;
     else runs.push({ run, from: offset, length: 1, format });
   }
+  const presentation = cellPresentationWitness(state,cells);
   return {
     version: 2,
+    ...(presentation ? {presentation} : {}),
     cells: cells.map((id) => ({
       id,
       children: state.nodes[id].children,

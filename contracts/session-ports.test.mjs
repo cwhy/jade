@@ -162,7 +162,7 @@ test("host replication adapter owns replay and duplicate validation without bypa
 });
 
 
-for(const wire of [43,44,45,46,47,48,49,50,51,52,53,54,55,56,57])test(`wire${wire} journal upgrade preserves immutable pending edits and advertises current wire`,async()=>{
+for(const wire of [43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58])test(`wire${wire} journal upgrade preserves immutable pending edits and advertises current wire`,async()=>{
  const room=new Room(fixture()),record=structuredClone(room.snapshot());
  record.state.storageCodec=43;
  const op={actor:"A",stream:"legacy",seq:1,id:"A:legacy:1",epoch:record.state.epoch,intent:{kind:"insert",at:gapAt(record.state,"bp",0),text:"offline",marks:[]}};
@@ -184,7 +184,7 @@ test("codec upgrade preserves receipts and identities, rejects unsupported input
  const {upgradeStorage,STORAGE_CODEC}=await import('@cwhy/jade-core/storage');
  const {apply}=await import('@cwhy/jade-core/model');
  const old=fixture();old.storageCodec=43;
- for(const codec of [43,44,45,46,47,48,49,50,51]){const legacy={...old,storageCodec:codec};const upgraded=upgradeStorage(legacy);assert.deepEqual({...upgraded,storageCodec:codec},legacy);}
+ for(const codec of [43,44,45,46,47,48,49,50,51,52]){const legacy={...old,storageCodec:codec};const upgraded=upgradeStorage(legacy);assert.deepEqual({...upgraded,storageCodec:codec},legacy);}
  const before=JSON.stringify(old),next=upgradeStorage(old);
  assert.equal(next.storageCodec,STORAGE_CODEC);
  assert.deepEqual({...next,storageCodec:43},old);assert.equal(JSON.stringify(old),before);
@@ -202,7 +202,7 @@ test("codec upgrade preserves receipts and identities, rejects unsupported input
 test("live wire fence rejects legacy/future versions before host data delivery", async()=>{
  const {requireWireVersion}=await import('@cwhy/jade-protocol');
  let deliveries=0;const serve=wire=>{requireWireVersion(wire);deliveries++;};
- for(const wire of [43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,WIRE_VERSION+1,null,String(WIRE_VERSION)])assert.throws(()=>serve(wire),/reload required/);
+ for(const wire of [43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,WIRE_VERSION+1,null,String(WIRE_VERSION)])assert.throws(()=>serve(wire),/reload required/);
  assert.equal(deliveries,0);serve(WIRE_VERSION);assert.equal(deliveries,1);
 });
 

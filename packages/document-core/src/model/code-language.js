@@ -1,4 +1,9 @@
 // SPDX-License-Identifier: MPL-2.0
+import {
+  conversionCodeRecord,
+  conversionLayout,
+  languageOwner,
+} from "./text-conversion.js";
 // Shared code metadata uses owned, ordered contributions. View preferences and
 // syntax-highlighter output never enter this ledger or the text replicas.
 export const CODE_LANGUAGES = Object.freeze([
@@ -29,14 +34,70 @@ export function codeLanguageState(node) {
     contribution: active?.id ?? null,
   };
 }
-export function validateCodeLanguage(state, intent) {
+// A merged block has its own choices, with a read-only default derived from
+// original histories. Editing the merged language never writes those sources.
+export function effectiveLanguageRecord(state, raw, seen = new Set()) {
+  const node = languageOwner(state, raw);
+  if (!node.languageOrigins) return node;
+  if (seen.has(node)) throw Error("Cyclic merged language origins");
+  const path = new Set(seen);
+  path.add(node);
+  const values = node.languageOrigins.map((origin) =>
+    origin.source === null
+      ? { language: "plaintext", explicit: false }
+      : codeLanguageState(
+          codeRecord(
+            effectiveLanguageRecord(
+              state,
+              { languageSource: origin.source },
+              path,
+            ),
+          ),
+        ),
+  );
+  const common = values.every((v) => v.language === values[0].language),
+    language = common ? values[0].language : "plaintext";
+  const explicit = !common || values.some((v) => v.explicit);
+  const local = node.codeLanguages;
+  const virtual = { ...node };
+  if (!chosen(local)) virtual.language = local?.present ? local.base : language;
+  virtual.codeLanguages = {
+    ...(local || { layers: [] }),
+    present: local?.present || explicit,
+    base: local?.present ? local.base : language,
+  };
+  return virtual;
+}
+function targetRecord(state, intent) {
+  if (intent.conversion !== undefined)
+    return languageOwner(
+      state,
+      conversionCodeRecord(state, intent.conversion, intent.block),
+    );
   const node = state.nodes[intent.block];
   if (!node?.live || node.type !== "code")
-    throw Error("Code block is no longer available");
-  if (!CODE_LANGUAGES.includes(intent.language))
-    throw Error("Unsupported code language");
+    throw Error("Code block is unavailable; restore it before editing");
   return node;
 }
+const codeRecord = (record) => ({ ...record, type: "code" });
+export function validateCodeLanguage(state, intent) {
+  const record = targetRecord(state, intent);
+  if (!CODE_LANGUAGES.includes(intent.language))
+    throw Error("Unsupported code language");
+  return record;
+}
+function writeLanguage(state, intent, next, write) {
+  if (next.kind === "textConvert") {
+    const root = state.nodes[state.root];
+    write("nodes")[root.id] = {
+      ...root,
+      textConversions: root.textConversions.map((e) =>
+        e.id === next.id ? next : e,
+      ),
+    };
+  } else write("nodes")[next.id] = next;
+}
+
 function project(node, ledger) {
   const next = { ...node, codeLanguages: ledger },
     active = chosen(ledger);
@@ -50,16 +111,35 @@ export function executeCodeLanguage(state, intent, action, { write, fail }) {
     adding = automatic || intent.kind === "codeLanguage",
     node = adding
       ? validateCodeLanguage(state, intent)
-      : state.nodes[intent.block];
-  if (!node?.live || node.type !== "code")
-    throw fail("Code block is unavailable; restore it before Undo");
+      : targetRecord(state, intent);
   // Detection is merely a default. A stale paste still inserts its text, but
   // cannot change the language after any intervening accepted document edit.
+  const group =
+    intent.conversion !== undefined
+      ? conversionLayout(
+          state,
+          conversionCodeRecord(state, intent.conversion, intent.block).parent,
+        ).find(
+          (g) => g.conversion === intent.conversion && g.id === intent.block,
+        )
+      : null;
+  const size =
+    intent.conversion !== undefined
+      ? group
+        ? group.blocks.reduce(
+            (n, id) => n + state.replicas[state.nodes[id].text].length,
+            0,
+          ) +
+          group.blocks.length -
+          1
+        : Infinity
+      : state.replicas[node.text]?.length;
   if (
     automatic &&
     (state.revision !== intent.revision ||
-      codeLanguageState(node).explicit ||
-      state.replicas[node.text]?.length !== 0)
+      codeLanguageState(codeRecord(effectiveLanguageRecord(state, node)))
+        .explicit ||
+      size !== 0)
   )
     return { kind: "batch", intents: [] };
   const ledger = node.codeLanguages || {
@@ -88,16 +168,36 @@ export function executeCodeLanguage(state, intent, action, { write, fail }) {
           ? { ...layer, active: intent.active }
           : layer,
       );
-  write("nodes")[node.id] = project(node, { ...ledger, layers });
+  writeLanguage(state, intent, project(node, { ...ledger, layers }), write);
   return {
     kind: "codeLanguageActive",
-    block: node.id,
+    block: intent.block,
+    ...(intent.conversion !== undefined
+      ? { conversion: intent.conversion }
+      : {}),
     target: adding ? action : intent.target,
     active: adding ? false : !intent.active,
   };
 }
 export function validateCodeLanguages(state) {
-  for (const node of Object.values(state.nodes)) {
+  const conversions = state.nodes[state.root].textConversions || [];
+  for (const raw of conversions) {
+    if (raw.languageOrigins) effectiveLanguageRecord(state, raw);
+    if (
+      raw.languageSource &&
+      (raw.codeLanguages !== undefined || Object.hasOwn(raw, "language"))
+    )
+      throw Error("Remembered code language must have one owner");
+    if (
+      (raw.codeLanguages !== undefined || Object.hasOwn(raw, "language")) &&
+      raw.target !== "code"
+    )
+      throw Error("Language metadata requires a code conversion");
+  }
+  for (const node of [
+    ...Object.values(state.nodes),
+    ...conversions.map(codeRecord),
+  ]) {
     const ledger = node.codeLanguages;
     if (ledger === undefined) continue;
     if (

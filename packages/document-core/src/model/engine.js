@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
+import { executeDisplayJoin } from "./display-boundary.js";
+import {executeTextSections} from "./conversion-sections.js";
+import {executeListConversion,executeConversion,validateConversions,validateLogicalEnter} from "./text-conversion.js";
 import {paragraphExitSteps} from "./paragraph-exit.js";
 import {executeAdjacentParagraph,executeAdjacentCode} from "./adjacent-paragraph.js";
 import {executeCodeLanguage,validateCodeLanguage,validateCodeLanguages} from "./code-language.js";
@@ -148,16 +151,21 @@ import {
   identities,
 } from "../text/pieces.js";
 
+import {validateIdentitySpans} from "../text/identity-spans.js";
+import {formatReader,updateFormats,validateFormats} from "../text/format-store.js";
+
 export class Conflict extends Error {}
 const copy = (value) => structuredClone(value);
 export const textOf = (atoms) => atoms.map((a) => a.char).join("");
 export function text(state, block) {
+  const formatAt=formatReader(state.formats);
   return readPieces(
     state.runs,
     state.replicas[state.nodes[block].text].pieces,
-  ).map((a) =>
-    state.formats?.[a.id] ? { ...a, marks: visible(state.formats[a.id]) } : a,
-  );
+  ).map((a) => {
+    const history=formatAt(a.id);
+    return history ? { ...a, marks: visible(history) } : a;
+  });
 }
 
 function parent(state, id) {
@@ -604,6 +612,7 @@ function restoreErasure(state, intent, action, context = null) {
     if (cut.at > 0 && cut.at < size && cut.block !== parts.at(-1).block)
       parts.push(cut);
   parts = restorationParts(state, intent, action, parts, {
+    resolve: (gap) => resolveGap(state, gap),
     atoms: (p) => readPieces(state.runs, p),
     locations: context?.locations() || locateAtoms(state),
     originInverses: context?.originInverses,
@@ -741,10 +750,14 @@ function move(state, intent) {
   return { kind: "move", node: intent.node, before: next };
 }
 function format(state, intent, action) {
-  state.formats = { ...state.formats };
+  if(intent.idSpans!==undefined){
+    if(intent.ids!==undefined)throw new Conflict("Ambiguous formatting identities");
+    validateIdentitySpans(state,intent.idSpans,{unique:true});
+  }
+  const formatAt=formatReader(state.formats),patches=new Map(),cache=new WeakMap();
   checkFormat(intent.property, intent.value);
   const locations = locateAtoms(state),
-    ids = [...new Set(intent.ids)];
+    ids = [...new Set(intent.ids || [...identities(intent.idSpans)])];
   for (const id of ids) {
     const found = locations.get(id);
     if (
@@ -756,30 +769,31 @@ function format(state, intent, action) {
         !(intent.property === "link" && intent.value === null))
     )
       continue;
-    state.formats[id] = contribute(
-      state.formats[id],
-      found.atom.marks,
-      action,
-      intent.property,
-      intent.value,
-    );
+    const previous=formatAt(id),key=previous||found.atom.marks;
+    let next=cache.get(key);
+    if(!next){next=contribute(previous,found.atom.marks,action,intent.property,intent.value);cache.set(key,next);}
+    patches.set(id,next);
   }
+  state.formats=updateFormats(state.formats,patches);
   return { kind: "formatActive", ids, contribution: action, active: false };
 }
 function formatActive(state, intent) {
-  state.formats = { ...state.formats };
+  const formatAt=formatReader(state.formats),patches=new Map(),cache=new WeakMap();
   for (const id of intent.ids) {
-    const cell = activate(
-      state.formats[id],
-      intent.contribution,
-      intent.active,
-    );
-    if (cell) state.formats[id] = cell;
+    const previous=formatAt(id);if(!previous)continue;
+    let cell=cache.get(previous);
+    if(!cell){cell=activate(previous,intent.contribution,intent.active);cache.set(previous,cell);}
+    if(cell)patches.set(id,cell);
   }
+  state.formats=updateFormats(state.formats,patches);
   return { ...intent, active: !intent.active };
 }
 function execute(state, intent, action, materialization = null) {
   intent = expandUndo(intent);
+  if (["displayJoin", "displayJoinActive"].includes(intent.kind)) return executeDisplayJoin(state,intent,action,{write:f=>writable(state,f),execute:(i,id)=>execute(state,i,id,materialization),fail:m=>new Conflict(m)});
+  if(intent.kind==='textSectionsConvert')return executeTextSections(state,intent,action,{write:f=>writable(state,f),execute:(i,id)=>execute(state,i,id,materialization)});
+  if(intent.kind==='listCodeConvert')return executeListConversion(state,intent,action,{write:f=>writable(state,f),execute:(i,id)=>execute(state,i,id,materialization)});
+  if (["textConvert", "textConversionActive"].includes(intent.kind)) return executeConversion(state,intent,action,{write:f=>writable(state,f),execute:(i,id)=>execute(state,i,id,materialization),fail:m=>new Conflict(m)});
   const imageHost={execute:(i,id)=>execute(state,i,id,materialization),write:f=>writable(state,f),resolveState:resolveGap,gapState:gapAt,fail:m=>new Conflict(m)};
   if(intent.kind==='imageBatch')return executeImageBatch(state,intent,action,imageHost);
   if(['imageListPlace','imageFlowActive'].includes(intent.kind))return executeImageFlow(state,intent,action,imageHost);
@@ -869,6 +883,7 @@ function execute(state, intent, action, materialization = null) {
     });
   if (intent.kind === "proseReplace")
     return executeProseReplace(state, intent, action, {
+      write: (field) => writable(state, field),
       execute: (i, id) => execute(state, i, id, materialization),
       resolve: (at) => resolveGap(state, at),
       gap: (id, offset) => gapAt(state, id, offset),
@@ -978,12 +993,14 @@ function execute(state, intent, action, materialization = null) {
   if (
     [
       "proseEnter",
+      "logicalEnter",
       "listEnter",
       "listBoundaryActive",
       "listHold",
       "listHoldActive",
     ].includes(intent.kind)
   ) {
+    if(intent.kind === "logicalEnter")validateLogicalEnter(state,intent);
     let inherited;
     if (intent.kind === "listEnter") {
       const point = resolveGap(state, intent.at);
@@ -1080,7 +1097,7 @@ export function apply(state, op, validateFinalShape = null) {
   if (op.epoch !== state.epoch) throw new Conflict("Document epoch changed");
   function internal(i) {
     return (
-      !!i.idSpans ||
+      (!!i.idSpans && i.kind!=="format") ||
       !!i.revive ||
       !!i.origin ||
       !!i.erasure ||
@@ -1098,6 +1115,8 @@ export function apply(state, op, validateFinalShape = null) {
         "listNumberingActive",
         "richForestActive",
         "codeLanguageActive",
+        "textConversionActive",
+        "displayJoinActive",
         "tableFormatActive",
         "restoreDistributedWidths",
         "restoreRowHeight",
@@ -1269,7 +1288,9 @@ export function apply(state, op, validateFinalShape = null) {
 const checkedRuns = new WeakSet();
 export function validate(state, incremental = false) {
   if (state.defaultModelVersion !== undefined && ![1, 2].includes(state.defaultModelVersion)) throw Error("Invalid default partition version");
+  validateFormats(state);
   validateUndoStorage(state);
+  validateConversions(state);
   validateReplacementOrigins(state);
   validateTextFields(state,text);
   validateNeighborStorage(state);

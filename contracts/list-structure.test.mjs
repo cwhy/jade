@@ -182,7 +182,7 @@ test("nested outdent adopts following siblings to preserve traversal order", () 
   assert.deepEqual(n.nodes[n.nodes.b.children[1]].children, ["c"]);
   assert.deepEqual(logical(undo(n)), logical(s));
 });
-test("selected attachment ranges and continuation paragraphs remain explicit gates, no mutation", () => {
+test("selected attachment ranges remain gated; collapsed Enter preserves trailing paragraphs", () => {
   const s = listFixture({ rich: true }),
     before = structuredClone(s);
   assert.throws(
@@ -190,12 +190,17 @@ test("selected attachment ranges and continuation paragraphs remain explicit gat
     /attachments/,
   );
   assert.deepEqual(s, before);
-  const unsupported = structuredClone(s);
-  unsupported.nodes.code.type = "paragraph";
-  const unchanged = structuredClone(unsupported);
-  assert.throws(
-    () => planListEnter(unsupported, r(unsupported, "bp", 2), op("key")),
-    /attachments/,
-  );
-  assert.deepEqual(unsupported, unchanged);
+  const continuation = structuredClone(s);
+  continuation.nodes.code.type = "paragraph";
+  delete continuation.nodes.code.language;
+  const unchanged = structuredClone(continuation);
+  const plan = planListEnter(continuation, r(continuation, "bp", 2), op("key"));
+  assert.deepEqual(continuation, unchanged);
+  const next=run(continuation,plan);
+  assert.deepEqual(next.nodes.b.children,["bp","key:attachment-children","code","image"]);
+  assert.equal(val(next,"bp"),"bb");
+  assert.equal(val(next,"key:list-tail"),"bb");
+  assert.deepEqual(text(next,"code"),text(unchanged,"code"));
+  assert.deepEqual(next.nodes.image,unchanged.nodes.image);
+  assert.deepEqual(logical(undo(next)),logical(unchanged));
 });

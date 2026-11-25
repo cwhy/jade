@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+import { compactIdentities } from "../text/identity-spans.js";
 import { apply } from "../model/engine.js";
 import { marks } from "../fragment.js";
 export const inlineProperties = [
@@ -41,6 +42,7 @@ export function planInlineFormat(
     clear = property === "clearFormat";
   const current = summarizeFormat(atoms, reset || clear ? "color" : property);
   if (current.empty) return { intent: null, state, selection };
+  const references = compactIdentities(current.ids, { unordered: true });
   let intent;
   if (reset || clear) {
     if (value !== undefined) throw Error("Clear formatting takes no value");
@@ -49,7 +51,7 @@ export function planInlineFormat(
       intents: (reset ? ["color", "highlight"] : inlineProperties).map(
         (property) => ({
           kind: "format",
-          ids: current.ids,
+          ...references,
           property,
           value: null,
         }),
@@ -65,7 +67,7 @@ export function planInlineFormat(
       if (value !== undefined) throw Error("Text style is a toggle");
       value = current.enabled ? null : { type: property };
     }
-    intent = { kind: "format", ids: current.ids, property, value };
+    intent = { kind: "format", ...references, property, value };
   }
   return { intent, state: apply(state, { ...op, intent }), selection };
 }

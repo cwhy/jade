@@ -1,0 +1,1879 @@
+{
+  "provenance": {
+    "version": "0.1.0-alpha.21",
+    "codec": 52,
+    "wire": 58,
+    "synthetic": true
+  },
+  "checkpoint": {
+    "state": {
+      "storageCodec": 52,
+      "defaultModelVersion": 2,
+      "pendingMedia": {},
+      "textClaims": {},
+      "textMasks": {},
+      "creations": {},
+      "creationPlacements": {},
+      "listJoins": {},
+      "joinProjection": [],
+      "listFamilies": {
+        "writer:legacy:2:family": {
+          "id": "writer:legacy:2:family",
+          "kind": "prose",
+          "source": "p",
+          "parent": "doc",
+          "order": [
+            "home",
+            "writer:legacy:2:cut"
+          ],
+          "cuts": {
+            "writer:legacy:2:cut": {
+              "id": "writer:legacy:2:cut",
+              "marker": "writer:legacy:2:prose-cut",
+              "block": "writer:legacy:2:paragraph",
+              "active": true
+            }
+          },
+          "layout": {
+            "blocks": [
+              "p",
+              "writer:legacy:2:paragraph"
+            ],
+            "home": 0
+          }
+        }
+      },
+      "runs": {
+        "seed:p": {
+          "chars": [
+            "A",
+            "l",
+            "p",
+            "h",
+            "a",
+            " ",
+            "B",
+            "e",
+            "t",
+            "a"
+          ],
+          "formats": [
+            {
+              "from": 0,
+              "length": 10,
+              "marks": [
+                "strong"
+              ]
+            }
+          ]
+        },
+        "seed:task": {
+          "chars": [
+            "C",
+            "h",
+            "e",
+            "c",
+            "k",
+            " ",
+            "t",
+            "h",
+            "e",
+            " ",
+            "e",
+            "x",
+            "a",
+            "m",
+            "p",
+            "l",
+            "e"
+          ],
+          "formats": [
+            {
+              "from": 0,
+              "length": 17,
+              "marks": []
+            }
+          ]
+        },
+        "seed:code": {
+          "chars": [
+            "p",
+            "r",
+            "i",
+            "n",
+            "t",
+            "(",
+            "1",
+            ")"
+          ],
+          "formats": [
+            {
+              "from": 0,
+              "length": 8,
+              "marks": []
+            }
+          ]
+        },
+        "writer:legacy:1:char": {
+          "chars": [
+            "s",
+            "h",
+            "a",
+            "r",
+            "e",
+            "d",
+            " "
+          ],
+          "formats": [
+            {
+              "from": 0,
+              "length": 7,
+              "marks": [
+                "underline"
+              ]
+            }
+          ]
+        }
+      },
+      "formats": {},
+      "epoch": 1,
+      "revision": 2,
+      "root": "doc",
+      "nodes": {
+        "doc": {
+          "id": "doc",
+          "type": "doc",
+          "live": true,
+          "children": [
+            "p",
+            "writer:legacy:2:paragraph",
+            "table"
+          ]
+        },
+        "p": {
+          "id": "p",
+          "type": "paragraph",
+          "live": true,
+          "text": "partition:[\"writer:legacy:2\",\"p\"]"
+        },
+        "table": {
+          "id": "table",
+          "type": "table",
+          "live": true,
+          "children": [
+            "r"
+          ]
+        },
+        "r": {
+          "id": "r",
+          "type": "row",
+          "live": true,
+          "children": [
+            "c"
+          ]
+        },
+        "c": {
+          "id": "c",
+          "type": "cell",
+          "live": true,
+          "children": [
+            "list",
+            "code"
+          ]
+        },
+        "list": {
+          "id": "list",
+          "type": "ordered_list",
+          "live": true,
+          "children": [
+            "item"
+          ]
+        },
+        "item": {
+          "id": "item",
+          "type": "list_item",
+          "live": true,
+          "children": [
+            "task"
+          ]
+        },
+        "task": {
+          "id": "task",
+          "type": "paragraph",
+          "live": true,
+          "text": "seed:task"
+        },
+        "code": {
+          "id": "code",
+          "type": "code",
+          "language": "python",
+          "live": true,
+          "text": "seed:code"
+        },
+        "writer:legacy:2:paragraph": {
+          "id": "writer:legacy:2:paragraph",
+          "type": "paragraph",
+          "live": true,
+          "text": "partition:[\"writer:legacy:2\",\"writer:legacy:2:paragraph\"]"
+        }
+      },
+      "replicas": {
+        "seed:p": {
+          "id": "seed:p",
+          "generation": 1,
+          "owner": "p",
+          "retired": true,
+          "origin": "seed",
+          "pieces": [
+            {
+              "run": "seed:p",
+              "from": 0,
+              "length": 10
+            }
+          ],
+          "length": 10
+        },
+        "seed:task": {
+          "id": "seed:task",
+          "generation": 1,
+          "owner": "task",
+          "retired": false,
+          "origin": "seed",
+          "pieces": [
+            {
+              "run": "seed:task",
+              "from": 0,
+              "length": 5
+            },
+            {
+              "run": "writer:legacy:1:char",
+              "from": 0,
+              "length": 7
+            },
+            {
+              "run": "seed:task",
+              "from": 5,
+              "length": 12
+            }
+          ],
+          "length": 24
+        },
+        "seed:code": {
+          "id": "seed:code",
+          "generation": 1,
+          "owner": "code",
+          "retired": false,
+          "origin": "seed",
+          "pieces": [
+            {
+              "run": "seed:code",
+              "from": 0,
+              "length": 8
+            }
+          ],
+          "length": 8
+        },
+        "partition:[\"writer:legacy:2\",\"p\"]": {
+          "id": "partition:[\"writer:legacy:2\",\"p\"]",
+          "generation": 1,
+          "owner": "p",
+          "retired": false,
+          "origin": "writer:legacy:2",
+          "pieces": [
+            {
+              "run": "seed:p",
+              "from": 0,
+              "length": 5
+            }
+          ],
+          "length": 5
+        },
+        "partition:[\"writer:legacy:2\",\"writer:legacy:2:paragraph\"]": {
+          "id": "partition:[\"writer:legacy:2\",\"writer:legacy:2:paragraph\"]",
+          "generation": 1,
+          "owner": "writer:legacy:2:paragraph",
+          "retired": false,
+          "origin": "writer:legacy:2",
+          "pieces": [
+            {
+              "run": "seed:p",
+              "from": 5,
+              "length": 5
+            }
+          ],
+          "length": 5
+        }
+      },
+      "boundaries": {
+        "writer:legacy:2:prose-cut": {
+          "block": "writer:legacy:2:paragraph",
+          "offset": 0,
+          "ordinal": 0,
+          "edge": "start"
+        }
+      },
+      "boundaryOrder": [
+        "writer:legacy:2:prose-cut"
+      ],
+      "cutLinks": [],
+      "erasures": {},
+      "effects": {
+        "writer:legacy:1": {
+          "actor": "writer",
+          "inverse": {
+            "kind": "delete",
+            "ids": [
+              "writer:legacy:1:char:0",
+              "writer:legacy:1:char:1",
+              "writer:legacy:1:char:2",
+              "writer:legacy:1:char:3",
+              "writer:legacy:1:char:4",
+              "writer:legacy:1:char:5",
+              "writer:legacy:1:char:6"
+            ]
+          }
+        },
+        "writer:legacy:2": {
+          "actor": "writer",
+          "inverse": {
+            "kind": "listBoundaryActive",
+            "family": "writer:legacy:2:family",
+            "boundary": "writer:legacy:2:cut",
+            "active": false
+          }
+        }
+      },
+      "lineage": [
+        {
+          "action": "writer:legacy:2",
+          "sources": [
+            "seed:p"
+          ],
+          "targets": [
+            {
+              "text": "partition:[\"writer:legacy:2\",\"p\"]",
+              "block": "p",
+              "pieces": [
+                {
+                  "run": "seed:p",
+                  "from": 0,
+                  "length": 5
+                }
+              ]
+            },
+            {
+              "text": "partition:[\"writer:legacy:2\",\"writer:legacy:2:paragraph\"]",
+              "block": "writer:legacy:2:paragraph",
+              "pieces": [
+                {
+                  "run": "seed:p",
+                  "from": 5,
+                  "length": 5
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "deleted": {}
+    },
+    "receipts": {
+      "writer:legacy:1": {
+        "bytes": "{\"id\":\"writer:legacy:1\",\"actor\":\"writer\",\"stream\":\"legacy\",\"seq\":1,\"epoch\":1,\"modelVersion\":2,\"intent\":{\"kind\":\"insert\",\"at\":{\"codec\":2,\"text\":\"seed:task\",\"generation\":1,\"offset\":5,\"affinity\":\"right\",\"left\":\"seed:task:4\",\"right\":\"seed:task:5\",\"before\":[{\"run\":\"seed:task\",\"from\":0,\"length\":5}],\"after\":[{\"run\":\"seed:task\",\"from\":5,\"length\":12}]},\"text\":\"shared \",\"marks\":[\"underline\"]}}",
+        "outcome": "accepted",
+        "revision": 1
+      },
+      "writer:legacy:2": {
+        "bytes": "{\"id\":\"writer:legacy:2\",\"actor\":\"writer\",\"stream\":\"legacy\",\"seq\":2,\"epoch\":1,\"modelVersion\":2,\"intent\":{\"kind\":\"proseEnter\",\"at\":{\"codec\":2,\"text\":\"seed:p\",\"generation\":1,\"offset\":5,\"affinity\":\"right\",\"left\":\"seed:p:4\",\"right\":\"seed:p:5\",\"before\":[{\"run\":\"seed:p\",\"from\":0,\"length\":5}],\"after\":[{\"run\":\"seed:p\",\"from\":5,\"length\":5}]}}}",
+        "outcome": "accepted",
+        "revision": 2
+      }
+    },
+    "frontiers": {
+      "writer:legacy": 2
+    }
+  },
+  "events": [
+    {
+      "op": {
+        "id": "writer:legacy:1",
+        "actor": "writer",
+        "stream": "legacy",
+        "seq": 1,
+        "epoch": 1,
+        "modelVersion": 2,
+        "intent": {
+          "kind": "insert",
+          "at": {
+            "codec": 2,
+            "text": "seed:task",
+            "generation": 1,
+            "offset": 5,
+            "affinity": "right",
+            "left": "seed:task:4",
+            "right": "seed:task:5",
+            "before": [
+              {
+                "run": "seed:task",
+                "from": 0,
+                "length": 5
+              }
+            ],
+            "after": [
+              {
+                "run": "seed:task",
+                "from": 5,
+                "length": 12
+              }
+            ]
+          },
+          "text": "shared ",
+          "marks": [
+            "underline"
+          ]
+        }
+      },
+      "receipt": {
+        "bytes": "{\"id\":\"writer:legacy:1\",\"actor\":\"writer\",\"stream\":\"legacy\",\"seq\":1,\"epoch\":1,\"modelVersion\":2,\"intent\":{\"kind\":\"insert\",\"at\":{\"codec\":2,\"text\":\"seed:task\",\"generation\":1,\"offset\":5,\"affinity\":\"right\",\"left\":\"seed:task:4\",\"right\":\"seed:task:5\",\"before\":[{\"run\":\"seed:task\",\"from\":0,\"length\":5}],\"after\":[{\"run\":\"seed:task\",\"from\":5,\"length\":12}]},\"text\":\"shared \",\"marks\":[\"underline\"]}}",
+        "outcome": "accepted",
+        "revision": 1
+      }
+    },
+    {
+      "op": {
+        "id": "writer:legacy:2",
+        "actor": "writer",
+        "stream": "legacy",
+        "seq": 2,
+        "epoch": 1,
+        "modelVersion": 2,
+        "intent": {
+          "kind": "proseEnter",
+          "at": {
+            "codec": 2,
+            "text": "seed:p",
+            "generation": 1,
+            "offset": 5,
+            "affinity": "right",
+            "left": "seed:p:4",
+            "right": "seed:p:5",
+            "before": [
+              {
+                "run": "seed:p",
+                "from": 0,
+                "length": 5
+              }
+            ],
+            "after": [
+              {
+                "run": "seed:p",
+                "from": 5,
+                "length": 5
+              }
+            ]
+          }
+        }
+      },
+      "receipt": {
+        "bytes": "{\"id\":\"writer:legacy:2\",\"actor\":\"writer\",\"stream\":\"legacy\",\"seq\":2,\"epoch\":1,\"modelVersion\":2,\"intent\":{\"kind\":\"proseEnter\",\"at\":{\"codec\":2,\"text\":\"seed:p\",\"generation\":1,\"offset\":5,\"affinity\":\"right\",\"left\":\"seed:p:4\",\"right\":\"seed:p:5\",\"before\":[{\"run\":\"seed:p\",\"from\":0,\"length\":5}],\"after\":[{\"run\":\"seed:p\",\"from\":5,\"length\":5}]}}}",
+        "outcome": "accepted",
+        "revision": 2
+      }
+    },
+    {
+      "op": {
+        "id": "writer:legacy:3",
+        "actor": "writer",
+        "stream": "legacy",
+        "seq": 3,
+        "epoch": 1,
+        "modelVersion": 2,
+        "intent": {
+          "kind": "insert",
+          "at": {
+            "codec": 2,
+            "text": "seed:code",
+            "generation": 1,
+            "offset": 6,
+            "affinity": "right",
+            "left": "seed:code:5",
+            "right": "seed:code:6",
+            "before": [
+              {
+                "run": "seed:code",
+                "from": 0,
+                "length": 6
+              }
+            ],
+            "after": [
+              {
+                "run": "seed:code",
+                "from": 6,
+                "length": 2
+              }
+            ]
+          },
+          "text": "2 + ",
+          "marks": []
+        }
+      },
+      "receipt": {
+        "bytes": "{\"id\":\"writer:legacy:3\",\"actor\":\"writer\",\"stream\":\"legacy\",\"seq\":3,\"epoch\":1,\"modelVersion\":2,\"intent\":{\"kind\":\"insert\",\"at\":{\"codec\":2,\"text\":\"seed:code\",\"generation\":1,\"offset\":6,\"affinity\":\"right\",\"left\":\"seed:code:5\",\"right\":\"seed:code:6\",\"before\":[{\"run\":\"seed:code\",\"from\":0,\"length\":6}],\"after\":[{\"run\":\"seed:code\",\"from\":6,\"length\":2}]},\"text\":\"2 + \",\"marks\":[]}}",
+        "outcome": "accepted",
+        "revision": 3
+      }
+    }
+  ],
+  "anchor": {
+    "epoch": 1,
+    "codec": 1,
+    "atoms": [
+      "seed:task:0",
+      "seed:task:1",
+      "seed:task:2",
+      "seed:task:3"
+    ]
+  },
+  "pending": {
+    "id": "writer:legacy:3",
+    "actor": "writer",
+    "stream": "legacy",
+    "seq": 3,
+    "epoch": 1,
+    "modelVersion": 2,
+    "intent": {
+      "kind": "insert",
+      "at": {
+        "codec": 2,
+        "text": "seed:code",
+        "generation": 1,
+        "offset": 6,
+        "affinity": "right",
+        "left": "seed:code:5",
+        "right": "seed:code:6",
+        "before": [
+          {
+            "run": "seed:code",
+            "from": 0,
+            "length": 6
+          }
+        ],
+        "after": [
+          {
+            "run": "seed:code",
+            "from": 6,
+            "length": 2
+          }
+        ]
+      },
+      "text": "2 + ",
+      "marks": []
+    }
+  },
+  "saved": {
+    "seq": 3,
+    "base": {
+      "state": {
+        "storageCodec": 52,
+        "defaultModelVersion": 2,
+        "pendingMedia": {},
+        "textClaims": {},
+        "textMasks": {},
+        "creations": {},
+        "creationPlacements": {},
+        "listJoins": {},
+        "joinProjection": [],
+        "listFamilies": {
+          "writer:legacy:2:family": {
+            "id": "writer:legacy:2:family",
+            "kind": "prose",
+            "source": "p",
+            "parent": "doc",
+            "order": [
+              "home",
+              "writer:legacy:2:cut"
+            ],
+            "cuts": {
+              "writer:legacy:2:cut": {
+                "id": "writer:legacy:2:cut",
+                "marker": "writer:legacy:2:prose-cut",
+                "block": "writer:legacy:2:paragraph",
+                "active": true
+              }
+            },
+            "layout": {
+              "blocks": [
+                "p",
+                "writer:legacy:2:paragraph"
+              ],
+              "home": 0
+            }
+          }
+        },
+        "runs": {
+          "seed:p": {
+            "chars": [
+              "A",
+              "l",
+              "p",
+              "h",
+              "a",
+              " ",
+              "B",
+              "e",
+              "t",
+              "a"
+            ],
+            "formats": [
+              {
+                "from": 0,
+                "length": 10,
+                "marks": [
+                  "strong"
+                ]
+              }
+            ]
+          },
+          "seed:task": {
+            "chars": [
+              "C",
+              "h",
+              "e",
+              "c",
+              "k",
+              " ",
+              "t",
+              "h",
+              "e",
+              " ",
+              "e",
+              "x",
+              "a",
+              "m",
+              "p",
+              "l",
+              "e"
+            ],
+            "formats": [
+              {
+                "from": 0,
+                "length": 17,
+                "marks": []
+              }
+            ]
+          },
+          "seed:code": {
+            "chars": [
+              "p",
+              "r",
+              "i",
+              "n",
+              "t",
+              "(",
+              "1",
+              ")"
+            ],
+            "formats": [
+              {
+                "from": 0,
+                "length": 8,
+                "marks": []
+              }
+            ]
+          },
+          "writer:legacy:1:char": {
+            "chars": [
+              "s",
+              "h",
+              "a",
+              "r",
+              "e",
+              "d",
+              " "
+            ],
+            "formats": [
+              {
+                "from": 0,
+                "length": 7,
+                "marks": [
+                  "underline"
+                ]
+              }
+            ]
+          }
+        },
+        "formats": {},
+        "epoch": 1,
+        "revision": 2,
+        "root": "doc",
+        "nodes": {
+          "doc": {
+            "id": "doc",
+            "type": "doc",
+            "live": true,
+            "children": [
+              "p",
+              "writer:legacy:2:paragraph",
+              "table"
+            ]
+          },
+          "p": {
+            "id": "p",
+            "type": "paragraph",
+            "live": true,
+            "text": "partition:[\"writer:legacy:2\",\"p\"]"
+          },
+          "table": {
+            "id": "table",
+            "type": "table",
+            "live": true,
+            "children": [
+              "r"
+            ]
+          },
+          "r": {
+            "id": "r",
+            "type": "row",
+            "live": true,
+            "children": [
+              "c"
+            ]
+          },
+          "c": {
+            "id": "c",
+            "type": "cell",
+            "live": true,
+            "children": [
+              "list",
+              "code"
+            ]
+          },
+          "list": {
+            "id": "list",
+            "type": "ordered_list",
+            "live": true,
+            "children": [
+              "item"
+            ]
+          },
+          "item": {
+            "id": "item",
+            "type": "list_item",
+            "live": true,
+            "children": [
+              "task"
+            ]
+          },
+          "task": {
+            "id": "task",
+            "type": "paragraph",
+            "live": true,
+            "text": "seed:task"
+          },
+          "code": {
+            "id": "code",
+            "type": "code",
+            "language": "python",
+            "live": true,
+            "text": "seed:code"
+          },
+          "writer:legacy:2:paragraph": {
+            "id": "writer:legacy:2:paragraph",
+            "type": "paragraph",
+            "live": true,
+            "text": "partition:[\"writer:legacy:2\",\"writer:legacy:2:paragraph\"]"
+          }
+        },
+        "replicas": {
+          "seed:p": {
+            "id": "seed:p",
+            "generation": 1,
+            "owner": "p",
+            "retired": true,
+            "origin": "seed",
+            "pieces": [
+              {
+                "run": "seed:p",
+                "from": 0,
+                "length": 10
+              }
+            ],
+            "length": 10
+          },
+          "seed:task": {
+            "id": "seed:task",
+            "generation": 1,
+            "owner": "task",
+            "retired": false,
+            "origin": "seed",
+            "pieces": [
+              {
+                "run": "seed:task",
+                "from": 0,
+                "length": 5
+              },
+              {
+                "run": "writer:legacy:1:char",
+                "from": 0,
+                "length": 7
+              },
+              {
+                "run": "seed:task",
+                "from": 5,
+                "length": 12
+              }
+            ],
+            "length": 24
+          },
+          "seed:code": {
+            "id": "seed:code",
+            "generation": 1,
+            "owner": "code",
+            "retired": false,
+            "origin": "seed",
+            "pieces": [
+              {
+                "run": "seed:code",
+                "from": 0,
+                "length": 8
+              }
+            ],
+            "length": 8
+          },
+          "partition:[\"writer:legacy:2\",\"p\"]": {
+            "id": "partition:[\"writer:legacy:2\",\"p\"]",
+            "generation": 1,
+            "owner": "p",
+            "retired": false,
+            "origin": "writer:legacy:2",
+            "pieces": [
+              {
+                "run": "seed:p",
+                "from": 0,
+                "length": 5
+              }
+            ],
+            "length": 5
+          },
+          "partition:[\"writer:legacy:2\",\"writer:legacy:2:paragraph\"]": {
+            "id": "partition:[\"writer:legacy:2\",\"writer:legacy:2:paragraph\"]",
+            "generation": 1,
+            "owner": "writer:legacy:2:paragraph",
+            "retired": false,
+            "origin": "writer:legacy:2",
+            "pieces": [
+              {
+                "run": "seed:p",
+                "from": 5,
+                "length": 5
+              }
+            ],
+            "length": 5
+          }
+        },
+        "boundaries": {
+          "writer:legacy:2:prose-cut": {
+            "block": "writer:legacy:2:paragraph",
+            "offset": 0,
+            "ordinal": 0,
+            "edge": "start"
+          }
+        },
+        "boundaryOrder": [
+          "writer:legacy:2:prose-cut"
+        ],
+        "cutLinks": [],
+        "erasures": {},
+        "effects": {
+          "writer:legacy:1": {
+            "actor": "writer",
+            "inverse": {
+              "kind": "delete",
+              "ids": [
+                "writer:legacy:1:char:0",
+                "writer:legacy:1:char:1",
+                "writer:legacy:1:char:2",
+                "writer:legacy:1:char:3",
+                "writer:legacy:1:char:4",
+                "writer:legacy:1:char:5",
+                "writer:legacy:1:char:6"
+              ]
+            }
+          },
+          "writer:legacy:2": {
+            "actor": "writer",
+            "inverse": {
+              "kind": "listBoundaryActive",
+              "family": "writer:legacy:2:family",
+              "boundary": "writer:legacy:2:cut",
+              "active": false
+            }
+          }
+        },
+        "lineage": [
+          {
+            "action": "writer:legacy:2",
+            "sources": [
+              "seed:p"
+            ],
+            "targets": [
+              {
+                "text": "partition:[\"writer:legacy:2\",\"p\"]",
+                "block": "p",
+                "pieces": [
+                  {
+                    "run": "seed:p",
+                    "from": 0,
+                    "length": 5
+                  }
+                ]
+              },
+              {
+                "text": "partition:[\"writer:legacy:2\",\"writer:legacy:2:paragraph\"]",
+                "block": "writer:legacy:2:paragraph",
+                "pieces": [
+                  {
+                    "run": "seed:p",
+                    "from": 5,
+                    "length": 5
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "deleted": {}
+      },
+      "receipts": {
+        "writer:legacy:1": {
+          "bytes": "{\"id\":\"writer:legacy:1\",\"actor\":\"writer\",\"stream\":\"legacy\",\"seq\":1,\"epoch\":1,\"modelVersion\":2,\"intent\":{\"kind\":\"insert\",\"at\":{\"codec\":2,\"text\":\"seed:task\",\"generation\":1,\"offset\":5,\"affinity\":\"right\",\"left\":\"seed:task:4\",\"right\":\"seed:task:5\",\"before\":[{\"run\":\"seed:task\",\"from\":0,\"length\":5}],\"after\":[{\"run\":\"seed:task\",\"from\":5,\"length\":12}]},\"text\":\"shared \",\"marks\":[\"underline\"]}}",
+          "outcome": "accepted",
+          "revision": 1
+        },
+        "writer:legacy:2": {
+          "bytes": "{\"id\":\"writer:legacy:2\",\"actor\":\"writer\",\"stream\":\"legacy\",\"seq\":2,\"epoch\":1,\"modelVersion\":2,\"intent\":{\"kind\":\"proseEnter\",\"at\":{\"codec\":2,\"text\":\"seed:p\",\"generation\":1,\"offset\":5,\"affinity\":\"right\",\"left\":\"seed:p:4\",\"right\":\"seed:p:5\",\"before\":[{\"run\":\"seed:p\",\"from\":0,\"length\":5}],\"after\":[{\"run\":\"seed:p\",\"from\":5,\"length\":5}]}}}",
+          "outcome": "accepted",
+          "revision": 2
+        }
+      },
+      "frontiers": {
+        "writer:legacy": 2
+      }
+    },
+    "pending": [
+      {
+        "id": "writer:legacy:3",
+        "actor": "writer",
+        "stream": "legacy",
+        "seq": 3,
+        "epoch": 1,
+        "modelVersion": 2,
+        "intent": {
+          "kind": "insert",
+          "at": {
+            "codec": 2,
+            "text": "seed:code",
+            "generation": 1,
+            "offset": 6,
+            "affinity": "right",
+            "left": "seed:code:5",
+            "right": "seed:code:6",
+            "before": [
+              {
+                "run": "seed:code",
+                "from": 0,
+                "length": 6
+              }
+            ],
+            "after": [
+              {
+                "run": "seed:code",
+                "from": 6,
+                "length": 2
+              }
+            ]
+          },
+          "text": "2 + ",
+          "marks": []
+        }
+      }
+    ],
+    "inflight": null
+  },
+  "expected": {
+    "storageCodec": 52,
+    "defaultModelVersion": 2,
+    "pendingMedia": {},
+    "textClaims": {},
+    "textMasks": {},
+    "creations": {},
+    "creationPlacements": {},
+    "listJoins": {},
+    "joinProjection": [],
+    "listFamilies": {
+      "writer:legacy:2:family": {
+        "id": "writer:legacy:2:family",
+        "kind": "prose",
+        "source": "p",
+        "parent": "doc",
+        "order": [
+          "home",
+          "writer:legacy:2:cut"
+        ],
+        "cuts": {
+          "writer:legacy:2:cut": {
+            "id": "writer:legacy:2:cut",
+            "marker": "writer:legacy:2:prose-cut",
+            "block": "writer:legacy:2:paragraph",
+            "active": true
+          }
+        },
+        "layout": {
+          "blocks": [
+            "p",
+            "writer:legacy:2:paragraph"
+          ],
+          "home": 0
+        }
+      }
+    },
+    "runs": {
+      "seed:p": {
+        "chars": [
+          "A",
+          "l",
+          "p",
+          "h",
+          "a",
+          " ",
+          "B",
+          "e",
+          "t",
+          "a"
+        ],
+        "formats": [
+          {
+            "from": 0,
+            "length": 10,
+            "marks": [
+              "strong"
+            ]
+          }
+        ]
+      },
+      "seed:task": {
+        "chars": [
+          "C",
+          "h",
+          "e",
+          "c",
+          "k",
+          " ",
+          "t",
+          "h",
+          "e",
+          " ",
+          "e",
+          "x",
+          "a",
+          "m",
+          "p",
+          "l",
+          "e"
+        ],
+        "formats": [
+          {
+            "from": 0,
+            "length": 17,
+            "marks": []
+          }
+        ]
+      },
+      "seed:code": {
+        "chars": [
+          "p",
+          "r",
+          "i",
+          "n",
+          "t",
+          "(",
+          "1",
+          ")"
+        ],
+        "formats": [
+          {
+            "from": 0,
+            "length": 8,
+            "marks": []
+          }
+        ]
+      },
+      "writer:legacy:1:char": {
+        "chars": [
+          "s",
+          "h",
+          "a",
+          "r",
+          "e",
+          "d",
+          " "
+        ],
+        "formats": [
+          {
+            "from": 0,
+            "length": 7,
+            "marks": [
+              "underline"
+            ]
+          }
+        ]
+      },
+      "writer:legacy:3:char": {
+        "chars": [
+          "2",
+          " ",
+          "+",
+          " "
+        ],
+        "formats": [
+          {
+            "from": 0,
+            "length": 4,
+            "marks": []
+          }
+        ]
+      }
+    },
+    "formats": {},
+    "epoch": 1,
+    "revision": 3,
+    "root": "doc",
+    "nodes": {
+      "doc": {
+        "id": "doc",
+        "type": "doc",
+        "live": true,
+        "children": [
+          "p",
+          "writer:legacy:2:paragraph",
+          "table"
+        ]
+      },
+      "p": {
+        "id": "p",
+        "type": "paragraph",
+        "live": true,
+        "text": "partition:[\"writer:legacy:2\",\"p\"]"
+      },
+      "table": {
+        "id": "table",
+        "type": "table",
+        "live": true,
+        "children": [
+          "r"
+        ]
+      },
+      "r": {
+        "id": "r",
+        "type": "row",
+        "live": true,
+        "children": [
+          "c"
+        ]
+      },
+      "c": {
+        "id": "c",
+        "type": "cell",
+        "live": true,
+        "children": [
+          "list",
+          "code"
+        ]
+      },
+      "list": {
+        "id": "list",
+        "type": "ordered_list",
+        "live": true,
+        "children": [
+          "item"
+        ]
+      },
+      "item": {
+        "id": "item",
+        "type": "list_item",
+        "live": true,
+        "children": [
+          "task"
+        ]
+      },
+      "task": {
+        "id": "task",
+        "type": "paragraph",
+        "live": true,
+        "text": "seed:task"
+      },
+      "code": {
+        "id": "code",
+        "type": "code",
+        "language": "python",
+        "live": true,
+        "text": "seed:code"
+      },
+      "writer:legacy:2:paragraph": {
+        "id": "writer:legacy:2:paragraph",
+        "type": "paragraph",
+        "live": true,
+        "text": "partition:[\"writer:legacy:2\",\"writer:legacy:2:paragraph\"]"
+      }
+    },
+    "replicas": {
+      "seed:p": {
+        "id": "seed:p",
+        "generation": 1,
+        "owner": "p",
+        "retired": true,
+        "origin": "seed",
+        "pieces": [
+          {
+            "run": "seed:p",
+            "from": 0,
+            "length": 10
+          }
+        ],
+        "length": 10
+      },
+      "seed:task": {
+        "id": "seed:task",
+        "generation": 1,
+        "owner": "task",
+        "retired": false,
+        "origin": "seed",
+        "pieces": [
+          {
+            "run": "seed:task",
+            "from": 0,
+            "length": 5
+          },
+          {
+            "run": "writer:legacy:1:char",
+            "from": 0,
+            "length": 7
+          },
+          {
+            "run": "seed:task",
+            "from": 5,
+            "length": 12
+          }
+        ],
+        "length": 24
+      },
+      "seed:code": {
+        "id": "seed:code",
+        "generation": 1,
+        "owner": "code",
+        "retired": false,
+        "origin": "seed",
+        "pieces": [
+          {
+            "run": "seed:code",
+            "from": 0,
+            "length": 6
+          },
+          {
+            "run": "writer:legacy:3:char",
+            "from": 0,
+            "length": 4
+          },
+          {
+            "run": "seed:code",
+            "from": 6,
+            "length": 2
+          }
+        ],
+        "length": 12
+      },
+      "partition:[\"writer:legacy:2\",\"p\"]": {
+        "id": "partition:[\"writer:legacy:2\",\"p\"]",
+        "generation": 1,
+        "owner": "p",
+        "retired": false,
+        "origin": "writer:legacy:2",
+        "pieces": [
+          {
+            "run": "seed:p",
+            "from": 0,
+            "length": 5
+          }
+        ],
+        "length": 5
+      },
+      "partition:[\"writer:legacy:2\",\"writer:legacy:2:paragraph\"]": {
+        "id": "partition:[\"writer:legacy:2\",\"writer:legacy:2:paragraph\"]",
+        "generation": 1,
+        "owner": "writer:legacy:2:paragraph",
+        "retired": false,
+        "origin": "writer:legacy:2",
+        "pieces": [
+          {
+            "run": "seed:p",
+            "from": 5,
+            "length": 5
+          }
+        ],
+        "length": 5
+      }
+    },
+    "boundaries": {
+      "writer:legacy:2:prose-cut": {
+        "block": "writer:legacy:2:paragraph",
+        "offset": 0,
+        "ordinal": 0,
+        "edge": "start"
+      }
+    },
+    "boundaryOrder": [
+      "writer:legacy:2:prose-cut"
+    ],
+    "cutLinks": [],
+    "erasures": {},
+    "effects": {
+      "writer:legacy:1": {
+        "actor": "writer",
+        "inverse": {
+          "kind": "delete",
+          "ids": [
+            "writer:legacy:1:char:0",
+            "writer:legacy:1:char:1",
+            "writer:legacy:1:char:2",
+            "writer:legacy:1:char:3",
+            "writer:legacy:1:char:4",
+            "writer:legacy:1:char:5",
+            "writer:legacy:1:char:6"
+          ]
+        }
+      },
+      "writer:legacy:2": {
+        "actor": "writer",
+        "inverse": {
+          "kind": "listBoundaryActive",
+          "family": "writer:legacy:2:family",
+          "boundary": "writer:legacy:2:cut",
+          "active": false
+        }
+      },
+      "writer:legacy:3": {
+        "actor": "writer",
+        "inverse": {
+          "kind": "delete",
+          "ids": [
+            "writer:legacy:3:char:0",
+            "writer:legacy:3:char:1",
+            "writer:legacy:3:char:2",
+            "writer:legacy:3:char:3"
+          ]
+        }
+      }
+    },
+    "lineage": [
+      {
+        "action": "writer:legacy:2",
+        "sources": [
+          "seed:p"
+        ],
+        "targets": [
+          {
+            "text": "partition:[\"writer:legacy:2\",\"p\"]",
+            "block": "p",
+            "pieces": [
+              {
+                "run": "seed:p",
+                "from": 0,
+                "length": 5
+              }
+            ]
+          },
+          {
+            "text": "partition:[\"writer:legacy:2\",\"writer:legacy:2:paragraph\"]",
+            "block": "writer:legacy:2:paragraph",
+            "pieces": [
+              {
+                "run": "seed:p",
+                "from": 5,
+                "length": 5
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "deleted": {}
+  },
+  "lostAcknowledgement": {
+    "state": {
+      "storageCodec": 52,
+      "defaultModelVersion": 2,
+      "pendingMedia": {},
+      "textClaims": {},
+      "textMasks": {},
+      "creations": {},
+      "creationPlacements": {},
+      "listJoins": {},
+      "joinProjection": [],
+      "listFamilies": {
+        "writer:legacy:2:family": {
+          "id": "writer:legacy:2:family",
+          "kind": "prose",
+          "source": "p",
+          "parent": "doc",
+          "order": [
+            "home",
+            "writer:legacy:2:cut"
+          ],
+          "cuts": {
+            "writer:legacy:2:cut": {
+              "id": "writer:legacy:2:cut",
+              "marker": "writer:legacy:2:prose-cut",
+              "block": "writer:legacy:2:paragraph",
+              "active": true
+            }
+          },
+          "layout": {
+            "blocks": [
+              "p",
+              "writer:legacy:2:paragraph"
+            ],
+            "home": 0
+          }
+        }
+      },
+      "runs": {
+        "seed:p": {
+          "chars": [
+            "A",
+            "l",
+            "p",
+            "h",
+            "a",
+            " ",
+            "B",
+            "e",
+            "t",
+            "a"
+          ],
+          "formats": [
+            {
+              "from": 0,
+              "length": 10,
+              "marks": [
+                "strong"
+              ]
+            }
+          ]
+        },
+        "seed:task": {
+          "chars": [
+            "C",
+            "h",
+            "e",
+            "c",
+            "k",
+            " ",
+            "t",
+            "h",
+            "e",
+            " ",
+            "e",
+            "x",
+            "a",
+            "m",
+            "p",
+            "l",
+            "e"
+          ],
+          "formats": [
+            {
+              "from": 0,
+              "length": 17,
+              "marks": []
+            }
+          ]
+        },
+        "seed:code": {
+          "chars": [
+            "p",
+            "r",
+            "i",
+            "n",
+            "t",
+            "(",
+            "1",
+            ")"
+          ],
+          "formats": [
+            {
+              "from": 0,
+              "length": 8,
+              "marks": []
+            }
+          ]
+        },
+        "writer:legacy:1:char": {
+          "chars": [
+            "s",
+            "h",
+            "a",
+            "r",
+            "e",
+            "d",
+            " "
+          ],
+          "formats": [
+            {
+              "from": 0,
+              "length": 7,
+              "marks": [
+                "underline"
+              ]
+            }
+          ]
+        },
+        "writer:legacy:3:char": {
+          "chars": [
+            "2",
+            " ",
+            "+",
+            " "
+          ],
+          "formats": [
+            {
+              "from": 0,
+              "length": 4,
+              "marks": []
+            }
+          ]
+        }
+      },
+      "formats": {},
+      "epoch": 1,
+      "revision": 3,
+      "root": "doc",
+      "nodes": {
+        "doc": {
+          "id": "doc",
+          "type": "doc",
+          "live": true,
+          "children": [
+            "p",
+            "writer:legacy:2:paragraph",
+            "table"
+          ]
+        },
+        "p": {
+          "id": "p",
+          "type": "paragraph",
+          "live": true,
+          "text": "partition:[\"writer:legacy:2\",\"p\"]"
+        },
+        "table": {
+          "id": "table",
+          "type": "table",
+          "live": true,
+          "children": [
+            "r"
+          ]
+        },
+        "r": {
+          "id": "r",
+          "type": "row",
+          "live": true,
+          "children": [
+            "c"
+          ]
+        },
+        "c": {
+          "id": "c",
+          "type": "cell",
+          "live": true,
+          "children": [
+            "list",
+            "code"
+          ]
+        },
+        "list": {
+          "id": "list",
+          "type": "ordered_list",
+          "live": true,
+          "children": [
+            "item"
+          ]
+        },
+        "item": {
+          "id": "item",
+          "type": "list_item",
+          "live": true,
+          "children": [
+            "task"
+          ]
+        },
+        "task": {
+          "id": "task",
+          "type": "paragraph",
+          "live": true,
+          "text": "seed:task"
+        },
+        "code": {
+          "id": "code",
+          "type": "code",
+          "language": "python",
+          "live": true,
+          "text": "seed:code"
+        },
+        "writer:legacy:2:paragraph": {
+          "id": "writer:legacy:2:paragraph",
+          "type": "paragraph",
+          "live": true,
+          "text": "partition:[\"writer:legacy:2\",\"writer:legacy:2:paragraph\"]"
+        }
+      },
+      "replicas": {
+        "seed:p": {
+          "id": "seed:p",
+          "generation": 1,
+          "owner": "p",
+          "retired": true,
+          "origin": "seed",
+          "pieces": [
+            {
+              "run": "seed:p",
+              "from": 0,
+              "length": 10
+            }
+          ],
+          "length": 10
+        },
+        "seed:task": {
+          "id": "seed:task",
+          "generation": 1,
+          "owner": "task",
+          "retired": false,
+          "origin": "seed",
+          "pieces": [
+            {
+              "run": "seed:task",
+              "from": 0,
+              "length": 5
+            },
+            {
+              "run": "writer:legacy:1:char",
+              "from": 0,
+              "length": 7
+            },
+            {
+              "run": "seed:task",
+              "from": 5,
+              "length": 12
+            }
+          ],
+          "length": 24
+        },
+        "seed:code": {
+          "id": "seed:code",
+          "generation": 1,
+          "owner": "code",
+          "retired": false,
+          "origin": "seed",
+          "pieces": [
+            {
+              "run": "seed:code",
+              "from": 0,
+              "length": 6
+            },
+            {
+              "run": "writer:legacy:3:char",
+              "from": 0,
+              "length": 4
+            },
+            {
+              "run": "seed:code",
+              "from": 6,
+              "length": 2
+            }
+          ],
+          "length": 12
+        },
+        "partition:[\"writer:legacy:2\",\"p\"]": {
+          "id": "partition:[\"writer:legacy:2\",\"p\"]",
+          "generation": 1,
+          "owner": "p",
+          "retired": false,
+          "origin": "writer:legacy:2",
+          "pieces": [
+            {
+              "run": "seed:p",
+              "from": 0,
+              "length": 5
+            }
+          ],
+          "length": 5
+        },
+        "partition:[\"writer:legacy:2\",\"writer:legacy:2:paragraph\"]": {
+          "id": "partition:[\"writer:legacy:2\",\"writer:legacy:2:paragraph\"]",
+          "generation": 1,
+          "owner": "writer:legacy:2:paragraph",
+          "retired": false,
+          "origin": "writer:legacy:2",
+          "pieces": [
+            {
+              "run": "seed:p",
+              "from": 5,
+              "length": 5
+            }
+          ],
+          "length": 5
+        }
+      },
+      "boundaries": {
+        "writer:legacy:2:prose-cut": {
+          "block": "writer:legacy:2:paragraph",
+          "offset": 0,
+          "ordinal": 0,
+          "edge": "start"
+        }
+      },
+      "boundaryOrder": [
+        "writer:legacy:2:prose-cut"
+      ],
+      "cutLinks": [],
+      "erasures": {},
+      "effects": {
+        "writer:legacy:1": {
+          "actor": "writer",
+          "inverse": {
+            "kind": "delete",
+            "ids": [
+              "writer:legacy:1:char:0",
+              "writer:legacy:1:char:1",
+              "writer:legacy:1:char:2",
+              "writer:legacy:1:char:3",
+              "writer:legacy:1:char:4",
+              "writer:legacy:1:char:5",
+              "writer:legacy:1:char:6"
+            ]
+          }
+        },
+        "writer:legacy:2": {
+          "actor": "writer",
+          "inverse": {
+            "kind": "listBoundaryActive",
+            "family": "writer:legacy:2:family",
+            "boundary": "writer:legacy:2:cut",
+            "active": false
+          }
+        },
+        "writer:legacy:3": {
+          "actor": "writer",
+          "inverse": {
+            "kind": "delete",
+            "ids": [
+              "writer:legacy:3:char:0",
+              "writer:legacy:3:char:1",
+              "writer:legacy:3:char:2",
+              "writer:legacy:3:char:3"
+            ]
+          }
+        }
+      },
+      "lineage": [
+        {
+          "action": "writer:legacy:2",
+          "sources": [
+            "seed:p"
+          ],
+          "targets": [
+            {
+              "text": "partition:[\"writer:legacy:2\",\"p\"]",
+              "block": "p",
+              "pieces": [
+                {
+                  "run": "seed:p",
+                  "from": 0,
+                  "length": 5
+                }
+              ]
+            },
+            {
+              "text": "partition:[\"writer:legacy:2\",\"writer:legacy:2:paragraph\"]",
+              "block": "writer:legacy:2:paragraph",
+              "pieces": [
+                {
+                  "run": "seed:p",
+                  "from": 5,
+                  "length": 5
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "deleted": {}
+    },
+    "receipts": {
+      "writer:legacy:1": {
+        "bytes": "{\"id\":\"writer:legacy:1\",\"actor\":\"writer\",\"stream\":\"legacy\",\"seq\":1,\"epoch\":1,\"modelVersion\":2,\"intent\":{\"kind\":\"insert\",\"at\":{\"codec\":2,\"text\":\"seed:task\",\"generation\":1,\"offset\":5,\"affinity\":\"right\",\"left\":\"seed:task:4\",\"right\":\"seed:task:5\",\"before\":[{\"run\":\"seed:task\",\"from\":0,\"length\":5}],\"after\":[{\"run\":\"seed:task\",\"from\":5,\"length\":12}]},\"text\":\"shared \",\"marks\":[\"underline\"]}}",
+        "outcome": "accepted",
+        "revision": 1
+      },
+      "writer:legacy:2": {
+        "bytes": "{\"id\":\"writer:legacy:2\",\"actor\":\"writer\",\"stream\":\"legacy\",\"seq\":2,\"epoch\":1,\"modelVersion\":2,\"intent\":{\"kind\":\"proseEnter\",\"at\":{\"codec\":2,\"text\":\"seed:p\",\"generation\":1,\"offset\":5,\"affinity\":\"right\",\"left\":\"seed:p:4\",\"right\":\"seed:p:5\",\"before\":[{\"run\":\"seed:p\",\"from\":0,\"length\":5}],\"after\":[{\"run\":\"seed:p\",\"from\":5,\"length\":5}]}}}",
+        "outcome": "accepted",
+        "revision": 2
+      },
+      "writer:legacy:3": {
+        "bytes": "{\"id\":\"writer:legacy:3\",\"actor\":\"writer\",\"stream\":\"legacy\",\"seq\":3,\"epoch\":1,\"modelVersion\":2,\"intent\":{\"kind\":\"insert\",\"at\":{\"codec\":2,\"text\":\"seed:code\",\"generation\":1,\"offset\":6,\"affinity\":\"right\",\"left\":\"seed:code:5\",\"right\":\"seed:code:6\",\"before\":[{\"run\":\"seed:code\",\"from\":0,\"length\":6}],\"after\":[{\"run\":\"seed:code\",\"from\":6,\"length\":2}]},\"text\":\"2 + \",\"marks\":[]}}",
+        "outcome": "accepted",
+        "revision": 3
+      }
+    },
+    "frontiers": {
+      "writer:legacy": 3
+    }
+  },
+  "firstOwnedEdit": {
+    "id": "writer:legacy:1",
+    "actor": "writer",
+    "stream": "legacy",
+    "seq": 1,
+    "epoch": 1,
+    "modelVersion": 2,
+    "intent": {
+      "kind": "insert",
+      "at": {
+        "codec": 2,
+        "text": "seed:task",
+        "generation": 1,
+        "offset": 5,
+        "affinity": "right",
+        "left": "seed:task:4",
+        "right": "seed:task:5",
+        "before": [
+          {
+            "run": "seed:task",
+            "from": 0,
+            "length": 5
+          }
+        ],
+        "after": [
+          {
+            "run": "seed:task",
+            "from": 5,
+            "length": 12
+          }
+        ]
+      },
+      "text": "shared ",
+      "marks": [
+        "underline"
+      ]
+    }
+  }
+}
